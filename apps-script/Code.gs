@@ -245,6 +245,20 @@ function gradeAnswers_(courseId, answers) {
     'WAH-001': [1, 2, 0, 3, 1],
     'CSP-002': [1, 2, 0, 3, 1],
     'SCA-003': [1, 0, 3, 1, 2],
+    'FOP-004': [1, 0, 3, 1, 2],
+    'HEM-005': [1, 0, 3, 1, 2],
+    'MMI-006': [2, 0, 3, 1, 2],
+    'RIG-007': [1, 2, 3, 0, 2],
+    'SIG-008': [2, 3, 1, 0, 2],
+    'FIR-009': [3, 2, 0, 1, 2],
+    'HSK-010': [1, 2, 0, 3, 1],
+    'EXC-011': [1, 2, 0, 3, 1],
+    'ELC-012': [1, 2, 0, 3, 1],
+    'LOTO-013': [1, 2, 0, 3, 1],
+    'PPE-014': [1, 2, 3, 0, 1],
+    'HPT-015': [2, 0, 3, 1, 2],
+    'HAZ-016': [2, 0, 3, 1, 2],
+    'EMR-017': [2, 0, 3, 1, 2],
   };
   const key = keys[courseId];
   if (!key) throw new Error('No approved answer key exists for this course.');

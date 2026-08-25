@@ -4,8 +4,14 @@ import Image from 'next/image';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { CertificateRecord, getProfile, registerLearner, submitAttempt } from '../lib/backend';
 import { changePassword, FirebaseSession, refreshSession, sendPasswordReset, signIn, signUp } from '../lib/firebase-rest';
-import { confinedSpaceCourse, courseCatalog } from '../lib/course-catalog';
+import { confinedSpaceCourse, courseCatalog, type CourseLesson } from '../lib/course-catalog';
 import { scaffoldCourse } from '../lib/phase-one-courses';
+import { fallingObjectCourse } from '../lib/falling-object-course';
+import { equipmentCourse } from '../lib/equipment-course';
+import { manMachineCourse } from '../lib/man-machine-course';
+import { riggingCourse, signalCourse } from '../lib/final-courses-a';
+import { fireCourse, housekeepingCourse, excavationCourse, electricalCourse, lotoCourse } from '../lib/final-courses-b';
+import { ppeCourse, toolsCourse, hazcomCourse, emergencyCourse } from '../lib/final-courses-c';
 
 type Lang = 'en' | 'ar' | 'ur' | 'hi';
 type View = 'language' | 'account' | 'dashboard' | 'lesson' | 'quiz' | 'result' | 'profile';
@@ -138,7 +144,14 @@ export default function Home() {
   const [activeCourseId, setActiveCourseId] = useState('WAH-001');
   const [completedCourseIds, setCompletedCourseIds] = useState<string[]>([]);
   const activeCourse = courseCatalog.find((item) => item.id === activeCourseId) || courseCatalog[0];
-  const data = activeCourseId === 'CSP-002' ? confinedSpaceCourse[lang] : activeCourseId === 'SCA-003' ? scaffoldCourse[lang] : course[lang];
+  const lessons: Record<string, CourseLesson> = {
+    'CSP-002': confinedSpaceCourse[lang], 'SCA-003': scaffoldCourse[lang], 'FOP-004': fallingObjectCourse[lang],
+    'HEM-005': equipmentCourse[lang], 'MMI-006': manMachineCourse[lang], 'RIG-007': riggingCourse[lang],
+    'SIG-008': signalCourse[lang], 'FIR-009': fireCourse[lang], 'HSK-010': housekeepingCourse[lang],
+    'EXC-011': excavationCourse[lang], 'ELC-012': electricalCourse[lang], 'LOTO-013': lotoCourse[lang],
+    'PPE-014': ppeCourse[lang], 'HPT-015': toolsCourse[lang], 'HAZ-016': hazcomCourse[lang], 'EMR-017': emergencyCourse[lang],
+  };
+  const data = lessons[activeCourseId] || course[lang];
   const courseTitle = activeCourse.titles[lang];
   const t = { ...copy[lang], lesson: courseTitle };
   const rtl = languages.find((item) => item.code === lang)?.rtl;
