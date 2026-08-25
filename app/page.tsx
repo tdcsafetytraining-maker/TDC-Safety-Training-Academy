@@ -3,10 +3,20 @@
 import Image from 'next/image';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { CertificateRecord, getProfile, registerLearner, submitAttempt } from '../lib/backend';
-import { changePassword, sendPasswordReset, signIn, signUp } from '../lib/firebase-rest';
+import { changePassword, FirebaseSession, refreshSession, sendPasswordReset, signIn, signUp } from '../lib/firebase-rest';
 
 type Lang = 'en' | 'ar' | 'ur' | 'hi';
 type View = 'language' | 'account' | 'dashboard' | 'lesson' | 'quiz' | 'result' | 'profile';
+
+type StoredAuth = {
+  refreshToken: string;
+  email: string;
+  name: string;
+  idNumber: string;
+  language: Lang;
+};
+
+const AUTH_STORAGE_KEY = 'tdc-safety-academy-session-v1';
 
 const languages: { code: Lang; name: string; local: string; rtl: boolean }[] = [
   { code: 'en', name: 'English', local: 'English', rtl: false },
@@ -121,11 +131,49 @@ export default function Home() {
   const [certificate, setCertificate] = useState<CertificateRecord | null>(null);
   const [certificates, setCertificates] = useState<CertificateRecord[]>([]);
   const [passwordMessage, setPasswordMessage] = useState('');
+  const [serviceWarning, setServiceWarning] = useState('');
   const t = copy[lang];
   const data = course[lang];
   const rtl = languages.find((item) => item.code === lang)?.rtl;
   const allAnswered = answers.every((value) => value >= 0);
   const locked = Boolean(lockoutUntil && new Date(lockoutUntil) > new Date()) && !passed;
+
+  function persistSession(session: FirebaseSession, details: Omit<StoredAuth, 'refreshToken'>) {
+    const stored: StoredAuth = { ...details, refreshToken: session.refreshToken };
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(stored));
+    setIdToken(session.idToken);
+  }
+
+  useEffect(() => {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) return;
+    let stored: StoredAuth;
+    try {
+      stored = JSON.parse(raw) as StoredAuth;
+      if (!stored.refreshToken || !stored.email) throw new Error('Invalid stored session.');
+    } catch {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      return;
+    }
+
+    setBusy(true);
+    refreshSession(stored.refreshToken).then((session) => {
+      persistSession(session, {
+        email: stored.email,
+        name: stored.name,
+        idNumber: stored.idNumber,
+        language: stored.language,
+      });
+      setLang(stored.language);
+      setSelected(stored.language);
+      setName(stored.name);
+      setEmail(stored.email);
+      setIdNumber(stored.idNumber);
+      setView('dashboard');
+    }).catch(() => {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+    }).finally(() => setBusy(false));
+  }, []);
 
   useEffect(() => {
     if (view !== 'profile' || !idToken) return;
@@ -166,11 +214,21 @@ export default function Home() {
         ? await signUp(accountEmail, first, fullName)
         : await signIn(accountEmail, first);
       const resolvedName = fullName || session.displayName || accountEmail.split('@')[0];
-      await registerLearner(session.idToken, resolvedName, lang);
-      setIdToken(session.idToken);
+      persistSession(session, {
+        email: session.email || accountEmail,
+        name: resolvedName,
+        idNumber,
+        language: lang,
+      });
       setName(resolvedName);
       setEmail(session.email || accountEmail);
       setView('dashboard');
+      try {
+        await registerLearner(session.idToken, resolvedName, lang);
+        setServiceWarning('');
+      } catch {
+        setServiceWarning('You are signed in. Training records are temporarily unavailable; please retry from your course or profile.');
+      }
     } catch (problem) {
       setError(problem instanceof Error ? problem.message : 'Unable to sign in.');
     } finally {
@@ -218,7 +276,7 @@ export default function Home() {
     setBusy(true);
     try {
       const session = await changePassword(idToken, first);
-      setIdToken(session.idToken);
+      persistSession(session, { email, name, idNumber, language: lang });
       setPasswordMessage(t.saved);
       event.currentTarget.reset();
     } catch (problem) {
@@ -227,8 +285,9 @@ export default function Home() {
   }
 
   function signOut() {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
     setView('language'); setSelected(''); setName(''); setEmail(''); setIdToken('');
-    setAttempts(0); setPassed(false); setCertificates([]); setCertificate(null); setError('');
+    setAttempts(0); setPassed(false); setCertificates([]); setCertificate(null); setError(''); setServiceWarning('');
   }
 
   return (
@@ -257,7 +316,7 @@ export default function Home() {
       )}
 
       {view === 'dashboard' && (
-        <section className="mx-auto w-full max-w-6xl px-5 py-9 sm:px-8"><p className="step">{t.welcome}, {name || 'Learner'}</p><div className="mt-2 flex flex-wrap items-end justify-between gap-4"><div><h1 className="text-3xl font-black tracking-tight sm:text-4xl">{t.progress}</h1><p className="mt-2 text-sm text-[#65756c]">{email}</p></div><span className="pill">1 course active</span></div><article className="course-card mt-8"><div className="course-visual"><span>01</span><b>FALL<br/>PROTECTION</b></div><div className="flex-1 p-6 sm:p-8"><div className="flex flex-wrap gap-2"><span className="tag">29 CFR 1926 Subpart M</span><span className="tag">Awareness</span></div><h2 className="mt-5 text-2xl font-black">{t.lesson}</h2><div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[#596b61]"><span>{t.cards}</span><span>{t.questions}</span><span>{t.pass}</span></div>{!idNumber && <label className="field mt-5"><span>ID / Iqama number for the certificate</span><input value={idNumber} onChange={(event) => setIdNumber(event.target.value)} required /></label>}{locked && <div className="mt-5 rounded-xl bg-[#fff3dd] p-4 text-sm font-semibold text-[#7a5011]">{t.lock}<br/>{lockoutUntil}</div>}<button type="button" disabled={locked || !idNumber} onClick={() => { setSlide(0); setView('lesson'); }} className="primary-button mt-6 sm:w-auto sm:px-8">{attempts ? t.resume : t.start}</button></div></article><h2 className="mt-10 text-lg font-black">Upcoming modules</h2><div className="mt-4 grid gap-3 sm:grid-cols-3">{['Confined Spaces', 'Lifting & Rigging', 'Fire Watch'].map((item) => <div key={item} className="rounded-2xl border border-[#dce6df] bg-white p-5"><span className="text-xs font-bold uppercase tracking-wider text-[#849188]">Coming next</span><h3 className="mt-2 font-extrabold">{item}</h3></div>)}</div></section>
+        <section className="mx-auto w-full max-w-6xl px-5 py-9 sm:px-8"><p className="step">{t.welcome}, {name || 'Learner'}</p><div className="mt-2 flex flex-wrap items-end justify-between gap-4"><div><h1 className="text-3xl font-black tracking-tight sm:text-4xl">{t.progress}</h1><p className="mt-2 text-sm text-[#65756c]">{email}</p></div><span className="pill">1 course active</span></div>{serviceWarning && <p className="mt-5 rounded-xl bg-[#fff3dd] p-4 text-sm font-semibold text-[#7a5011]">{serviceWarning}</p>}<article className="course-card mt-8"><div className="course-visual"><span>01</span><b>FALL<br/>PROTECTION</b></div><div className="flex-1 p-6 sm:p-8"><div className="flex flex-wrap gap-2"><span className="tag">29 CFR 1926 Subpart M</span><span className="tag">Awareness</span></div><h2 className="mt-5 text-2xl font-black">{t.lesson}</h2><div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[#596b61]"><span>{t.cards}</span><span>{t.questions}</span><span>{t.pass}</span></div>{!idNumber && <label className="field mt-5"><span>ID / Iqama number for the certificate</span><input value={idNumber} onChange={(event) => setIdNumber(event.target.value)} required /></label>}{locked && <div className="mt-5 rounded-xl bg-[#fff3dd] p-4 text-sm font-semibold text-[#7a5011]">{t.lock}<br/>{lockoutUntil}</div>}<button type="button" disabled={locked || !idNumber} onClick={() => { setSlide(0); setView('lesson'); }} className="primary-button mt-6 sm:w-auto sm:px-8">{attempts ? t.resume : t.start}</button></div></article><h2 className="mt-10 text-lg font-black">Upcoming modules</h2><div className="mt-4 grid gap-3 sm:grid-cols-3">{['Confined Spaces', 'Lifting & Rigging', 'Fire Watch'].map((item) => <div key={item} className="rounded-2xl border border-[#dce6df] bg-white p-5"><span className="text-xs font-bold uppercase tracking-wider text-[#849188]">Coming next</span><h3 className="mt-2 font-extrabold">{item}</h3></div>)}</div></section>
       )}
 
       {view === 'lesson' && (
