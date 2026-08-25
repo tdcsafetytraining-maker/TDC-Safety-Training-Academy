@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { CertificateRecord, getProfile, registerLearner, submitAttempt } from '../lib/backend';
 import { changePassword, FirebaseSession, refreshSession, sendPasswordReset, signIn, signUp } from '../lib/firebase-rest';
+import { confinedSpaceCourse, courseCatalog } from '../lib/course-catalog';
 
 type Lang = 'en' | 'ar' | 'ur' | 'hi';
 type View = 'language' | 'account' | 'dashboard' | 'lesson' | 'quiz' | 'result' | 'profile';
@@ -14,6 +15,7 @@ type StoredAuth = {
   name: string;
   idNumber: string;
   language: Lang;
+  completedCourseIds?: string[];
 };
 
 const AUTH_STORAGE_KEY = 'tdc-safety-academy-session-v1';
@@ -132,11 +134,29 @@ export default function Home() {
   const [certificates, setCertificates] = useState<CertificateRecord[]>([]);
   const [passwordMessage, setPasswordMessage] = useState('');
   const [serviceWarning, setServiceWarning] = useState('');
-  const t = copy[lang];
-  const data = course[lang];
+  const [activeCourseId, setActiveCourseId] = useState('WAH-001');
+  const [completedCourseIds, setCompletedCourseIds] = useState<string[]>([]);
+  const activeCourse = courseCatalog.find((item) => item.id === activeCourseId) || courseCatalog[0];
+  const data = activeCourseId === 'CSP-002' ? confinedSpaceCourse[lang] : course[lang];
+  const courseTitle = activeCourse.titles[lang];
+  const t = { ...copy[lang], lesson: courseTitle };
   const rtl = languages.find((item) => item.code === lang)?.rtl;
   const allAnswered = answers.every((value) => value >= 0);
   const locked = Boolean(lockoutUntil && new Date(lockoutUntil) > new Date()) && !passed;
+  const firstIncompleteIndex = courseCatalog.findIndex((item) => !completedCourseIds.includes(item.id));
+  const availableCourseCount = courseCatalog.filter((item, index) => item.contentReady && (completedCourseIds.includes(item.id) || index === firstIncompleteIndex)).length;
+
+  function selectCourse(courseId: string) {
+    setActiveCourseId(courseId);
+    setSlide(0);
+    setAnswers([-1, -1, -1, -1, -1]);
+    setAttempts(0);
+    setPassed(false);
+    setScore(0);
+    setCertificate(null);
+    setLockoutUntil('');
+    setError('');
+  }
 
   function persistSession(session: FirebaseSession, details: Omit<StoredAuth, 'refreshToken'>) {
     const stored: StoredAuth = { ...details, refreshToken: session.refreshToken };
@@ -163,12 +183,14 @@ export default function Home() {
         name: stored.name,
         idNumber: stored.idNumber,
         language: stored.language,
+        completedCourseIds: stored.completedCourseIds || [],
       });
       setLang(stored.language);
       setSelected(stored.language);
       setName(stored.name);
       setEmail(stored.email);
       setIdNumber(stored.idNumber);
+      setCompletedCourseIds(stored.completedCourseIds || []);
       setView('dashboard');
     }).catch(() => {
       localStorage.removeItem(AUTH_STORAGE_KEY);
@@ -176,12 +198,24 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (view !== 'profile' || !idToken) return;
+    if ((view !== 'profile' && view !== 'dashboard') || !idToken) return;
     getProfile(idToken).then((profile) => {
       setName(profile.fullName || name);
       setCertificates(profile.certificates);
-    }).catch((problem: Error) => setError(problem.message));
+      setCompletedCourseIds((current) => Array.from(new Set([...current, ...profile.completedCourseIds])));
+      setServiceWarning('');
+    }).catch(() => setServiceWarning('You are signed in. Training records are temporarily unavailable; locally saved progress is shown.'));
   }, [view, idToken]);
+
+  useEffect(() => {
+    const firstIncomplete = courseCatalog.find((item) => !completedCourseIds.includes(item.id));
+    if (firstIncomplete && (activeCourseId === 'WAH-001' || completedCourseIds.includes(activeCourseId))) {
+      setActiveCourseId(firstIncomplete.id);
+      setAttempts(0);
+      setPassed(false);
+      setLockoutUntil('');
+    }
+  }, [completedCourseIds]);
 
   const progress = useMemo(() => {
     if (passed) return 100;
@@ -219,6 +253,7 @@ export default function Home() {
         name: resolvedName,
         idNumber,
         language: lang,
+        completedCourseIds,
       });
       setName(resolvedName);
       setEmail(session.email || accountEmail);
@@ -243,16 +278,25 @@ export default function Home() {
     setError('');
     try {
       const record = await submitAttempt({
-        idToken, courseId: 'WAH-001', courseTitle: t.lesson, learnerName: name,
+        idToken, courseId: activeCourse.id, courseTitle, learnerName: name,
         idNumber, language: lang, answers, scorePercent: result, correctAnswers: correct,
         totalQuestions: data.quiz.length, startedAt: new Date().toISOString(),
-        oshaReferences: '29 CFR 1926.500; 1926.501; 1926.502; 1926.503',
+        oshaReferences: activeCourse.references,
       });
       setScore(result);
       setAttempts(record.attemptNumber);
       setPassed(record.passed);
       setLockoutUntil(record.lockoutUntil || '');
       setCertificate(record.certificate || null);
+      if (record.passed) {
+        const nextCompleted = Array.from(new Set([...completedCourseIds, activeCourse.id]));
+        setCompletedCourseIds(nextCompleted);
+        const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+        if (raw) {
+          const stored = JSON.parse(raw) as StoredAuth;
+          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ ...stored, completedCourseIds: nextCompleted }));
+        }
+      }
       setView('result');
     } catch (problem) {
       setError(problem instanceof Error ? problem.message : 'Unable to record the assessment.');
@@ -276,7 +320,7 @@ export default function Home() {
     setBusy(true);
     try {
       const session = await changePassword(idToken, first);
-      persistSession(session, { email, name, idNumber, language: lang });
+      persistSession(session, { email, name, idNumber, language: lang, completedCourseIds });
       setPasswordMessage(t.saved);
       event.currentTarget.reset();
     } catch (problem) {
@@ -288,6 +332,7 @@ export default function Home() {
     localStorage.removeItem(AUTH_STORAGE_KEY);
     setView('language'); setSelected(''); setName(''); setEmail(''); setIdToken('');
     setAttempts(0); setPassed(false); setCertificates([]); setCertificate(null); setError(''); setServiceWarning('');
+    setCompletedCourseIds([]); setActiveCourseId('WAH-001');
   }
 
   return (
@@ -316,7 +361,40 @@ export default function Home() {
       )}
 
       {view === 'dashboard' && (
-        <section className="mx-auto w-full max-w-6xl px-5 py-9 sm:px-8"><p className="step">{t.welcome}, {name || 'Learner'}</p><div className="mt-2 flex flex-wrap items-end justify-between gap-4"><div><h1 className="text-3xl font-black tracking-tight sm:text-4xl">{t.progress}</h1><p className="mt-2 text-sm text-[#65756c]">{email}</p></div><span className="pill">1 course active</span></div>{serviceWarning && <p className="mt-5 rounded-xl bg-[#fff3dd] p-4 text-sm font-semibold text-[#7a5011]">{serviceWarning}</p>}<article className="course-card mt-8"><div className="course-visual"><span>01</span><b>FALL<br/>PROTECTION</b></div><div className="flex-1 p-6 sm:p-8"><div className="flex flex-wrap gap-2"><span className="tag">29 CFR 1926 Subpart M</span><span className="tag">Awareness</span></div><h2 className="mt-5 text-2xl font-black">{t.lesson}</h2><div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[#596b61]"><span>{t.cards}</span><span>{t.questions}</span><span>{t.pass}</span></div>{!idNumber && <label className="field mt-5"><span>ID / Iqama number for the certificate</span><input value={idNumber} onChange={(event) => setIdNumber(event.target.value)} required /></label>}{locked && <div className="mt-5 rounded-xl bg-[#fff3dd] p-4 text-sm font-semibold text-[#7a5011]">{t.lock}<br/>{lockoutUntil}</div>}<button type="button" disabled={locked || !idNumber} onClick={() => { setSlide(0); setView('lesson'); }} className="primary-button mt-6 sm:w-auto sm:px-8">{attempts ? t.resume : t.start}</button></div></article><h2 className="mt-10 text-lg font-black">Upcoming modules</h2><div className="mt-4 grid gap-3 sm:grid-cols-3">{['Confined Spaces', 'Lifting & Rigging', 'Fire Watch'].map((item) => <div key={item} className="rounded-2xl border border-[#dce6df] bg-white p-5"><span className="text-xs font-bold uppercase tracking-wider text-[#849188]">Coming next</span><h3 className="mt-2 font-extrabold">{item}</h3></div>)}</div></section>
+        <section className="mx-auto w-full max-w-6xl px-5 py-9 sm:px-8">
+          <p className="step">{t.welcome}, {name || 'Learner'}</p>
+          <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
+            <div><h1 className="text-3xl font-black tracking-tight sm:text-4xl">{t.progress}</h1><p className="mt-2 text-sm text-[#65756c]">{email}</p></div>
+            <span className="pill">{availableCourseCount} course active · {completedCourseIds.length}/17 completed</span>
+          </div>
+          {serviceWarning && <p className="mt-5 rounded-xl bg-[#fff3dd] p-4 text-sm font-semibold text-[#7a5011]">{serviceWarning}</p>}
+          <article className="course-card mt-8">
+            <div className="course-visual"><span>{String(courseCatalog.findIndex((item) => item.id === activeCourse.id) + 1).padStart(2, '0')}</span><b>{activeCourse.shortLabel}</b></div>
+            <div className="flex-1 p-6 sm:p-8">
+              <div className="flex flex-wrap gap-2"><span className="tag">{activeCourse.standard}</span><span className="tag">{completedCourseIds.includes(activeCourse.id) ? 'Completed · Review available' : 'Current course'}</span></div>
+              <h2 className="mt-5 text-2xl font-black">{courseTitle}</h2>
+              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[#596b61]"><span>{t.cards}</span><span>{t.questions}</span><span>{t.pass}</span></div>
+              {!idNumber && <label className="field mt-5"><span>ID / Iqama number for the certificate</span><input value={idNumber} onChange={(event) => setIdNumber(event.target.value)} required /></label>}
+              {locked && <div className="mt-5 rounded-xl bg-[#fff3dd] p-4 text-sm font-semibold text-[#7a5011]">{t.lock}<br/>{lockoutUntil}</div>}
+              {!activeCourse.contentReady && <p className="mt-5 rounded-xl bg-[#eef4f0] p-4 text-sm font-semibold text-[#52665a]">This OSHA module is listed in the sequence and its reviewed multilingual lesson is being prepared.</p>}
+              <button type="button" disabled={locked || !idNumber || !activeCourse.contentReady} onClick={() => { setSlide(0); setView('lesson'); }} className="primary-button mt-6 sm:w-auto sm:px-8">{completedCourseIds.includes(activeCourse.id) ? 'Review course' : attempts ? t.resume : t.start}</button>
+            </div>
+          </article>
+          <h2 className="mt-10 text-lg font-black">Construction safety course sequence</h2>
+          <p className="mt-2 text-sm text-[#607067]">Pass the current course with 80% or higher to unlock the next course.</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {courseCatalog.map((item, index) => {
+              const completed = completedCourseIds.includes(item.id);
+              const unlocked = completed || index === firstIncompleteIndex;
+              const selectable = unlocked && item.contentReady;
+              return <button key={item.id} type="button" disabled={!selectable} onClick={() => selectCourse(item.id)} className={`catalog-card ${activeCourse.id === item.id ? 'active' : ''}`}>
+                <span className={`catalog-status ${completed ? 'complete' : unlocked ? 'current' : ''}`}>{completed ? '✓ Completed' : unlocked ? (item.contentReady ? 'Available now' : 'Content in preparation') : '🔒 Locked'}</span>
+                <span className="mt-3 block text-xs font-bold text-[#718078]">{String(index + 1).padStart(2, '0')} · {item.standard}</span>
+                <strong className="mt-2 block text-base">{item.titles[lang]}</strong>
+              </button>;
+            })}
+          </div>
+        </section>
       )}
 
       {view === 'lesson' && (
@@ -339,3 +417,4 @@ export default function Home() {
     </main>
   );
 }
+
