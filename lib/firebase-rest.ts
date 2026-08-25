@@ -1,0 +1,48 @@
+export type FirebaseSession = {
+  idToken: string;
+  refreshToken: string;
+  expiresIn: string;
+  localId: string;
+  email: string;
+  displayName?: string;
+};
+
+type FirebaseError = { error?: { message?: string } };
+
+const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+
+function endpoint(action: string) {
+  if (!apiKey) throw new Error('Firebase is not configured. Add NEXT_PUBLIC_FIREBASE_API_KEY.');
+  return `https://identitytoolkit.googleapis.com/v1/accounts:${action}?key=${apiKey}`;
+}
+
+async function request(action: string, body: Record<string, unknown>) {
+  const response = await fetch(endpoint(action), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = (await response.json()) as FirebaseSession & FirebaseError;
+  if (!response.ok) {
+    const code = data.error?.message ?? 'AUTHENTICATION_FAILED';
+    throw new Error(code.replaceAll('_', ' ').toLowerCase());
+  }
+  return data;
+}
+
+export async function signUp(email: string, password: string, displayName: string) {
+  const session = await request('signUp', { email, password, returnSecureToken: true });
+  return request('update', { idToken: session.idToken, displayName, returnSecureToken: true });
+}
+
+export function signIn(email: string, password: string) {
+  return request('signInWithPassword', { email, password, returnSecureToken: true });
+}
+
+export function changePassword(idToken: string, password: string) {
+  return request('update', { idToken, password, returnSecureToken: true });
+}
+
+export function sendPasswordReset(email: string) {
+  return request('sendOobCode', { requestType: 'PASSWORD_RESET', email });
+}
