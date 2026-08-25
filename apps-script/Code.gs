@@ -6,6 +6,7 @@ const SETTINGS = {
   maxAttempts: 3,
   lockoutHours: 24,
   timeZone: 'Asia/Riyadh',
+  courseOrder: ['WAH-001', 'CSP-002', 'SCA-003', 'FOP-004', 'HEM-005', 'MMI-006', 'RIG-007', 'SIG-008', 'FIR-009', 'HSK-010', 'EXC-011', 'ELC-012', 'LOTO-013', 'PPE-014', 'HPT-015', 'HAZ-016', 'EMR-017'],
 };
 
 function doGet() {
@@ -13,18 +14,22 @@ function doGet() {
 }
 
 function doPost(event) {
+  const bridge = event && event.parameter && event.parameter.bridge === '1';
+  const channel = bridge ? clean_(event.parameter.channel || '', 80) : '';
   try {
-    const request = JSON.parse((event.postData && event.postData.contents) || '{}');
+    const request = JSON.parse(bridge ? (event.parameter.payload || '{}') : ((event.postData && event.postData.contents) || '{}'));
     const identity = verifyFirebaseToken_(request.idToken);
     let data;
     if (request.action === 'registerLearner') data = registerLearner_(identity, request);
     else if (request.action === 'submitAttempt') data = submitAttempt_(identity, request);
     else if (request.action === 'getProfile') data = getProfile_(identity);
     else throw new Error('Unsupported action.');
-    return json_({ ok: true, data: data });
+    const result = { ok: true, data: data };
+    return bridge ? bridge_(channel, result) : json_(result);
   } catch (error) {
     console.error(error && error.stack ? error.stack : error);
-    return json_({ ok: false, error: String(error && error.message ? error.message : error) });
+    const result = { ok: false, error: String(error && error.message ? error.message : error) };
+    return bridge ? bridge_(channel, result) : json_(result);
   }
 }
 
@@ -68,6 +73,7 @@ function submitAttempt_(identity, request) {
     const learnerName = clean_(request.learnerName || identity.displayName || 'Learner', 120);
     const idNumber = clean_(request.idNumber || '', 60);
     const language = allowedLanguage_(request.language);
+    verifyCourseUnlocked_(identity.uid, courseId);
     const grading = gradeAnswers_(courseId, request.answers);
     const score = grading.scorePercent;
     const correctAnswers = grading.correctAnswers;
@@ -113,6 +119,16 @@ function submitAttempt_(identity, request) {
     };
   } finally {
     lock.releaseLock();
+  }
+}
+
+function verifyCourseUnlocked_(uid, courseId) {
+  const index = SETTINGS.courseOrder.indexOf(courseId);
+  if (index < 0) throw new Error('This course is not in the approved course sequence.');
+  if (index === 0) return;
+  const previousCourseId = SETTINGS.courseOrder[index - 1];
+  if (!certificateFor_(uid, previousCourseId)) {
+    throw new Error('Complete the previous course before taking this assessment.');
   }
 }
 
@@ -176,15 +192,21 @@ function completeCourse_(identity, result) {
 function getProfile_(identity) {
   const learners = values_(sheet_('Learners'));
   const learner = learners.find(function (row, i) { return i > 0 && row[1] === identity.uid; });
-  const certificates = values_(sheet_('Certificates')).filter(function (row, i) {
+  const certificateRows = values_(sheet_('Certificates')).filter(function (row, i) {
     return i > 0 && row[2] === identity.uid && row[12] === 'Active';
-  }).map(function (row) {
+  });
+  const certificates = certificateRows.map(function (row) {
     return {
       certificateId: row[0], courseTitle: row[5], completionDate: displayDate_(row[6]),
       scorePercent: Number(row[7]), fileName: row[8], downloadUrl: row[10],
     };
   }).reverse();
-  return { fullName: learner ? learner[2] : identity.displayName, email: identity.email, certificates: certificates };
+  return {
+    fullName: learner ? learner[2] : identity.displayName,
+    email: identity.email,
+    certificates: certificates,
+    completedCourseIds: certificateRows.map(function (row) { return row[4]; }).filter(String),
+  };
 }
 
 function courseAttempts_(uid, courseId) {
@@ -219,7 +241,10 @@ function nextSerial_(year) {
 }
 
 function gradeAnswers_(courseId, answers) {
-  const keys = { 'WAH-001': [1, 2, 0, 3, 1] };
+  const keys = {
+    'WAH-001': [1, 2, 0, 3, 1],
+    'CSP-002': [1, 2, 0, 3, 1],
+  };
   const key = keys[courseId];
   if (!key) throw new Error('No approved answer key exists for this course.');
   if (!Array.isArray(answers) || answers.length !== key.length) throw new Error('All assessment questions must be answered.');
@@ -246,3 +271,10 @@ function pad_(value, length) { return String(value).padStart(length, '0'); }
 function iso_(date) { return Utilities.formatDate(date, SETTINGS.timeZone, "yyyy-MM-dd'T'HH:mm:ssXXX"); }
 function displayDate_(date) { return Utilities.formatDate(new Date(date), SETTINGS.timeZone, 'dd-MM-yyyy'); }
 function json_(payload) { return ContentService.createTextOutput(JSON.stringify(payload)).setMimeType(ContentService.MimeType.JSON); }
+function bridge_(channel, payload) {
+  const safePayload = JSON.stringify(payload).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026');
+  const safeChannel = JSON.stringify(channel);
+  return HtmlService.createHtmlOutput('<!doctype html><meta charset="utf-8"><script>parent.postMessage({channel:' + safeChannel + ',payload:' + safePayload + '},"*");<\/script>')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
