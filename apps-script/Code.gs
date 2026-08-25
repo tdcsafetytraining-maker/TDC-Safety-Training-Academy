@@ -244,6 +244,7 @@ function gradeAnswers_(courseId, answers) {
   const keys = {
     'WAH-001': [1, 2, 0, 3, 1],
     'CSP-002': [1, 2, 0, 3, 1],
+    'SCA-003': [1, 0, 3, 1, 2],
   };
   const key = keys[courseId];
   if (!key) throw new Error('No approved answer key exists for this course.');
