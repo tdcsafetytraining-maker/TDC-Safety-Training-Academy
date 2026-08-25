@@ -39,6 +39,13 @@ button:focus-visible { outline: 3px solid rgba(8, 123, 65, 0.3); outline-offset:
 .course-visual span { width: max-content; border-radius: 999px; background: #18a65d; padding: .35rem .7rem; font-size: .72rem; font-weight: 900; }
 .course-visual b { font-size: 1.55rem; line-height: 1.02; letter-spacing: .04em; }
 .tag { border-radius: 999px; background: #eef7f1; padding: .38rem .7rem; font-size: .68rem; font-weight: 850; color: #197347; }
+.catalog-card { min-height: 9.5rem; border: 1px solid #dce6df; border-radius: 1rem; background: white; padding: 1.1rem; text-align: start; transition: .18s ease; }
+.catalog-card:not(:disabled):hover { border-color: #72ad8a; transform: translateY(-2px); box-shadow: 0 10px 26px rgba(20,70,41,.08); }
+.catalog-card:disabled { cursor: not-allowed; background: #f6f8f6; color: #718078; opacity: .78; }
+.catalog-card.active { border-color: #078044; box-shadow: 0 0 0 3px rgba(7,128,68,.11); }
+.catalog-status { display: inline-block; border-radius: 999px; background: #edf1ee; padding: .32rem .58rem; font-size: .66rem; font-weight: 850; color: #66766d; }
+.catalog-status.complete { background: #e6f7ec; color: #087842; }
+.catalog-status.current { background: #fff1d8; color: #835312; }
 .lesson-card { position: relative; overflow: hidden; border: 1px solid #d8e6dc; border-radius: 1.75rem; background: white; padding: clamp(1.4rem, 5vw, 3.2rem); box-shadow: 0 22px 70px rgba(20,70,41,.1); }
 .lesson-number { position: absolute; inset-inline-end: 1.5rem; top: 1rem; font-size: clamp(4rem, 14vw, 7rem); line-height: 1; font-weight: 950; color: rgba(13,112,61,.07); }
 .question-card { border: 1px solid #dce6df; border-radius: 1.25rem; background: white; padding: 1.25rem; }
@@ -58,3 +65,4 @@ button:focus-visible { outline: 3px solid rgba(8, 123, 65, 0.3); outline-offset:
   .course-card { display: block; }
   .course-visual { min-width: 100%; min-height: 150px; }
 }
+
