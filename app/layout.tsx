@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: 'TDC HSE Training Academy',
   description: 'Mobile OSHA safety training for TDC Contracting.',
+  icons: { icon: `${siteUrl}/favicon.svg` },
   openGraph: {
     title: 'TDC Safety Academy',
     description: 'Mobile OSHA 1910 and 1926 safety training for TDC Contracting.',

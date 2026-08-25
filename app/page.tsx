@@ -1,7 +1,9 @@
 'use client';
 
 import Image from 'next/image';
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { CertificateRecord, getProfile, registerLearner, submitAttempt } from '../lib/backend';
+import { changePassword, sendPasswordReset, signIn, signUp } from '../lib/firebase-rest';
 
 type Lang = 'en' | 'ar' | 'ur' | 'hi';
 type View = 'language' | 'account' | 'dashboard' | 'lesson' | 'quiz' | 'result' | 'profile';
@@ -14,10 +16,10 @@ const languages: { code: Lang; name: string; local: string; rtl: boolean }[] = [
 ];
 
 const copy = {
-  en: { choose: 'Choose your language', chooseHelp: 'Your lessons, questions, results, and certificate will use this language.', continue: 'Continue to account', account: 'Create your learner account', accountHelp: 'Use your email and a private password. You can change it from your profile.', name: 'Full name', email: 'Email address', password: 'Password', confirm: 'Confirm password', create: 'Create account', welcome: 'Welcome', progress: 'Your safety training', start: 'Start course', resume: 'Continue course', cards: '4 learning cards', questions: '5 questions', pass: '80% required', lesson: 'Working at Height', next: 'Next card', quiz: 'Start assessment', question: 'Question', submit: 'Submit answers', passed: 'Congratulations, you’ve passed!', failed: 'Review the lesson and try again.', score: 'Your score', attempts: 'Attempts used', certificate: 'Certificate queued for email', retry: 'Try again', dashboard: 'Back to courses', profile: 'Profile & password', save: 'Change password', saved: 'Password change request saved.', signout: 'Sign out', standard: 'OSHA references', lock: 'Three attempts used. This course will reactivate 24 hours after your last attempt.' },
-  ar: { choose: 'اختر لغتك', chooseHelp: 'ستُعرض الدروس والأسئلة والنتائج والشهادة بهذه اللغة.', continue: 'المتابعة إلى الحساب', account: 'أنشئ حساب المتدرب', accountHelp: 'استخدم بريدك الإلكتروني وكلمة مرور خاصة، ويمكنك تغييرها من ملفك الشخصي.', name: 'الاسم الكامل', email: 'البريد الإلكتروني', password: 'كلمة المرور', confirm: 'تأكيد كلمة المرور', create: 'إنشاء الحساب', welcome: 'مرحباً', progress: 'تدريب السلامة الخاص بك', start: 'ابدأ الدورة', resume: 'متابعة الدورة', cards: '4 بطاقات تعليمية', questions: '5 أسئلة', pass: 'النجاح من 80٪', lesson: 'العمل على ارتفاعات', next: 'البطاقة التالية', quiz: 'ابدأ التقييم', question: 'السؤال', submit: 'إرسال الإجابات', passed: 'تهانينا، لقد نجحت!', failed: 'راجع الدرس ثم حاول مرة أخرى.', score: 'درجتك', attempts: 'المحاولات المستخدمة', certificate: 'تم تجهيز الشهادة للإرسال بالبريد', retry: 'حاول مرة أخرى', dashboard: 'العودة إلى الدورات', profile: 'الملف الشخصي وكلمة المرور', save: 'تغيير كلمة المرور', saved: 'تم حفظ طلب تغيير كلمة المرور.', signout: 'تسجيل الخروج', standard: 'مراجع OSHA', lock: 'تم استخدام ثلاث محاولات. ستُفعّل الدورة بعد 24 ساعة من آخر محاولة.' },
-  ur: { choose: 'اپنی زبان منتخب کریں', chooseHelp: 'آپ کے اسباق، سوالات، نتائج اور سرٹیفکیٹ اسی زبان میں ہوں گے۔', continue: 'اکاؤنٹ کی طرف جائیں', account: 'اپنا تربیتی اکاؤنٹ بنائیں', accountHelp: 'اپنا ای میل اور نجی پاس ورڈ استعمال کریں۔ آپ اسے پروفائل سے بدل سکتے ہیں۔', name: 'پورا نام', email: 'ای میل ایڈریس', password: 'پاس ورڈ', confirm: 'پاس ورڈ کی تصدیق', create: 'اکاؤنٹ بنائیں', welcome: 'خوش آمدید', progress: 'آپ کی حفاظتی تربیت', start: 'کورس شروع کریں', resume: 'کورس جاری رکھیں', cards: '4 تعلیمی کارڈز', questions: '5 سوالات', pass: '80٪ کامیابی ضروری', lesson: 'بلندی پر کام', next: 'اگلا کارڈ', quiz: 'جائزہ شروع کریں', question: 'سوال', submit: 'جوابات جمع کریں', passed: 'مبارک ہو، آپ کامیاب ہوگئے!', failed: 'سبق کا دوبارہ جائزہ لیں اور پھر کوشش کریں۔', score: 'آپ کا اسکور', attempts: 'استعمال شدہ کوششیں', certificate: 'سرٹیفکیٹ ای میل کے لیے تیار ہے', retry: 'دوبارہ کوشش کریں', dashboard: 'کورسز پر واپس جائیں', profile: 'پروفائل اور پاس ورڈ', save: 'پاس ورڈ تبدیل کریں', saved: 'پاس ورڈ کی تبدیلی کی درخواست محفوظ ہوگئی۔', signout: 'سائن آؤٹ', standard: 'OSHA حوالہ جات', lock: 'تین کوششیں مکمل ہوگئیں۔ آخری کوشش کے 24 گھنٹے بعد کورس دوبارہ فعال ہوگا۔' },
-  hi: { choose: 'अपनी भाषा चुनें', chooseHelp: 'आपके पाठ, प्रश्न, परिणाम और प्रमाणपत्र इसी भाषा में होंगे।', continue: 'खाते पर जाएँ', account: 'अपना प्रशिक्षु खाता बनाएँ', accountHelp: 'अपना ईमेल और निजी पासवर्ड इस्तेमाल करें। आप इसे प्रोफ़ाइल से कभी भी बदल सकते हैं।', name: 'पूरा नाम', email: 'ईमेल पता', password: 'पासवर्ड', confirm: 'पासवर्ड की पुष्टि', create: 'खाता बनाएँ', welcome: 'स्वागत है', progress: 'आपका सुरक्षा प्रशिक्षण', start: 'पाठ्यक्रम शुरू करें', resume: 'पाठ्यक्रम जारी रखें', cards: '4 शिक्षण कार्ड', questions: '5 प्रश्न', pass: '80% उत्तीर्ण अंक', lesson: 'ऊँचाई पर काम', next: 'अगला कार्ड', quiz: 'मूल्यांकन शुरू करें', question: 'प्रश्न', submit: 'उत्तर जमा करें', passed: 'बधाई हो, आप उत्तीर्ण हुए!', failed: 'पाठ की समीक्षा करें और फिर प्रयास करें।', score: 'आपका अंक', attempts: 'प्रयुक्त प्रयास', certificate: 'प्रमाणपत्र ईमेल के लिए तैयार है', retry: 'फिर प्रयास करें', dashboard: 'पाठ्यक्रमों पर लौटें', profile: 'प्रोफ़ाइल और पासवर्ड', save: 'पासवर्ड बदलें', saved: 'पासवर्ड बदलने का अनुरोध सहेजा गया।', signout: 'साइन आउट', standard: 'OSHA संदर्भ', lock: 'तीन प्रयास पूरे हो गए हैं। अंतिम प्रयास के 24 घंटे बाद पाठ्यक्रम फिर सक्रिय होगा।' },
+  en: { choose: 'Choose your language', chooseHelp: 'Your lessons, questions, results, and certificate will use this language.', continue: 'Continue to account', account: 'Learner account', accountHelp: 'Create an account or sign in with your email and private password.', name: 'Full name', email: 'Email address', password: 'Password', confirm: 'Confirm password', create: 'Create account', welcome: 'Welcome', progress: 'Your safety training', start: 'Start course', resume: 'Continue course', cards: '8 detailed slides', questions: '5 questions', pass: '80% required', lesson: 'Working at Height', next: 'Next slide', quiz: 'Start assessment', question: 'Question', submit: 'Submit answers', passed: 'Congratulations, you’ve passed!', failed: 'Review the lesson and try again.', score: 'Your score', attempts: 'Attempts used', certificate: 'Certificate ready to download', retry: 'Try again', dashboard: 'Back to courses', profile: 'Profile & certificates', save: 'Change password', saved: 'Password changed successfully.', signout: 'Sign out', standard: 'OSHA references', lock: 'Three attempts used. This course will reactivate 24 hours after your last attempt.' },
+  ar: { choose: 'اختر لغتك', chooseHelp: 'ستُعرض الدروس والأسئلة والنتائج والشهادة بهذه اللغة.', continue: 'المتابعة إلى الحساب', account: 'حساب المتدرب', accountHelp: 'أنشئ حساباً أو سجّل الدخول باستخدام بريدك الإلكتروني وكلمة مرور خاصة.', name: 'الاسم الكامل', email: 'البريد الإلكتروني', password: 'كلمة المرور', confirm: 'تأكيد كلمة المرور', create: 'إنشاء الحساب', welcome: 'مرحباً', progress: 'تدريب السلامة الخاص بك', start: 'ابدأ الدورة', resume: 'متابعة الدورة', cards: '8 شرائح تفصيلية', questions: '5 أسئلة', pass: 'النجاح من 80٪', lesson: 'العمل على ارتفاعات', next: 'الشريحة التالية', quiz: 'ابدأ التقييم', question: 'السؤال', submit: 'إرسال الإجابات', passed: 'تهانينا، لقد نجحت!', failed: 'راجع الدرس ثم حاول مرة أخرى.', score: 'درجتك', attempts: 'المحاولات المستخدمة', certificate: 'الشهادة جاهزة للتنزيل', retry: 'حاول مرة أخرى', dashboard: 'العودة إلى الدورات', profile: 'الملف الشخصي والشهادات', save: 'تغيير كلمة المرور', saved: 'تم تغيير كلمة المرور بنجاح.', signout: 'تسجيل الخروج', standard: 'مراجع OSHA', lock: 'تم استخدام ثلاث محاولات. ستُفعّل الدورة بعد 24 ساعة من آخر محاولة.' },
+  ur: { choose: 'اپنی زبان منتخب کریں', chooseHelp: 'آپ کے اسباق، سوالات، نتائج اور سرٹیفکیٹ اسی زبان میں ہوں گے۔', continue: 'اکاؤنٹ کی طرف جائیں', account: 'تربیتی اکاؤنٹ', accountHelp: 'اکاؤنٹ بنائیں یا اپنے ای میل اور نجی پاس ورڈ سے سائن اِن کریں۔', name: 'پورا نام', email: 'ای میل ایڈریس', password: 'پاس ورڈ', confirm: 'پاس ورڈ کی تصدیق', create: 'اکاؤنٹ بنائیں', welcome: 'خوش آمدید', progress: 'آپ کی حفاظتی تربیت', start: 'کورس شروع کریں', resume: 'کورس جاری رکھیں', cards: '8 تفصیلی سلائیڈز', questions: '5 سوالات', pass: '80٪ کامیابی ضروری', lesson: 'بلندی پر کام', next: 'اگلی سلائیڈ', quiz: 'جائزہ شروع کریں', question: 'سوال', submit: 'جوابات جمع کریں', passed: 'مبارک ہو، آپ کامیاب ہوگئے!', failed: 'سبق کا دوبارہ جائزہ لیں اور پھر کوشش کریں۔', score: 'آپ کا اسکور', attempts: 'استعمال شدہ کوششیں', certificate: 'سرٹیفکیٹ ڈاؤن لوڈ کے لیے تیار ہے', retry: 'دوبارہ کوشش کریں', dashboard: 'کورسز پر واپس جائیں', profile: 'پروفائل اور سرٹیفکیٹس', save: 'پاس ورڈ تبدیل کریں', saved: 'پاس ورڈ کامیابی سے تبدیل ہوگیا۔', signout: 'سائن آؤٹ', standard: 'OSHA حوالہ جات', lock: 'تین کوششیں مکمل ہوگئیں۔ آخری کوشش کے 24 گھنٹے بعد کورس دوبارہ فعال ہوگا۔' },
+  hi: { choose: 'अपनी भाषा चुनें', chooseHelp: 'आपके पाठ, प्रश्न, परिणाम और प्रमाणपत्र इसी भाषा में होंगे।', continue: 'खाते पर जाएँ', account: 'प्रशिक्षु खाता', accountHelp: 'खाता बनाएँ या अपने ईमेल और निजी पासवर्ड से साइन इन करें।', name: 'पूरा नाम', email: 'ईमेल पता', password: 'पासवर्ड', confirm: 'पासवर्ड की पुष्टि', create: 'खाता बनाएँ', welcome: 'स्वागत है', progress: 'आपका सुरक्षा प्रशिक्षण', start: 'पाठ्यक्रम शुरू करें', resume: 'पाठ्यक्रम जारी रखें', cards: '8 विस्तृत स्लाइड', questions: '5 प्रश्न', pass: '80% उत्तीर्ण अंक', lesson: 'ऊँचाई पर काम', next: 'अगली स्लाइड', quiz: 'मूल्यांकन शुरू करें', question: 'प्रश्न', submit: 'उत्तर जमा करें', passed: 'बधाई हो, आप उत्तीर्ण हुए!', failed: 'पाठ की समीक्षा करें और फिर प्रयास करें।', score: 'आपका अंक', attempts: 'प्रयुक्त प्रयास', certificate: 'प्रमाणपत्र डाउनलोड के लिए तैयार है', retry: 'फिर प्रयास करें', dashboard: 'पाठ्यक्रमों पर लौटें', profile: 'प्रोफ़ाइल और प्रमाणपत्र', save: 'पासवर्ड बदलें', saved: 'पासवर्ड सफलतापूर्वक बदल दिया गया।', signout: 'साइन आउट', standard: 'OSHA संदर्भ', lock: 'तीन प्रयास पूरे हो गए हैं। अंतिम प्रयास के 24 घंटे बाद पाठ्यक्रम फिर सक्रिय होगा।' },
 };
 
 const course = {
@@ -27,13 +29,17 @@ const course = {
       { n: '02', title: 'Use the right protection', text: 'Prefer guardrails, covers or other engineered controls. When personal fall arrest is required, use approved components, a suitable anchorage and a properly fitted full-body harness. Inspect the complete system before use.', ref: '29 CFR 1926.502' },
       { n: '03', title: 'Plan and work safely', text: 'A competent person must address site hazards and training. Maintain safe access, protect openings, keep the area orderly and never alter a system without authorization. Stop work when conditions or equipment change.', ref: '29 CFR 1926.20; 1926.503' },
       { n: '04', title: 'Rescue and stop-work actions', text: 'A fall-arrest plan is incomplete without prompt rescue. Know how to summon help, do not improvise a rescue, isolate the area and remove impacted equipment from service until a competent person clears it.', ref: '29 CFR 1926.502(d)(20)–(21)' },
+      { n: '05', title: 'Guardrail dimensions and strength', text: 'The top edge must be 42 in (1.1 m), plus or minus 3 in (8 cm), above the working level. When there is no wall or parapet at least 21 in (53 cm) high, install a midrail midway. The top rail must resist at least 200 lb (890 N); intermediate members must resist at least 150 lb (666 N).', ref: '29 CFR 1926.502(b)(1)–(5)' },
+      { n: '06', title: 'Anchorage and fall clearance', text: 'A personal fall-arrest anchorage must be independent of platform-support anchorages and support at least 5,000 lb (22.2 kN) per attached worker, or be designed as a complete system with a safety factor of at least two under a qualified person. Plan total fall distance so the worker cannot strike a lower level.', ref: '29 CFR 1926.502(d)(15)–(16)' },
+      { n: '07', title: 'Openings and falling objects', text: 'Protect holes, including skylights, with covers, guardrails or personal fall arrest as applicable. Covers must also prevent trips and falling objects. Use hard hats plus toeboards, screens, canopies or barricades where workers below may be struck. Toeboards must be at least 3½ in (9 cm) high.', ref: '29 CFR 1926.501(b)(4), 1926.501(c), 1926.502(j)' },
+      { n: '08', title: 'Competent-person training', text: 'Workers exposed to fall hazards must be trained by a competent person to recognize hazards and correctly use, inspect, erect and maintain the protection provided. Retraining is required when the workplace, equipment or a worker’s demonstrated knowledge changes.', ref: '29 CFR 1926.503(a)–(c)' },
     ],
     quiz: [
-      { q: 'What should happen before work at height begins?', a: ['Identify hazards and select controls', 'Wait until a worker complains', 'Use a harness for every task without assessment'], correct: 0 },
-      { q: 'Which is an engineered fall-protection control?', a: ['Guardrail system', 'Warning shouted by a coworker', 'Working faster'], correct: 0 },
-      { q: 'When should a personal fall-arrest system be inspected?', a: ['Before use', 'Only after a fall', 'Once during employment'], correct: 0 },
-      { q: 'What must a fall-protection plan consider?', a: ['Prompt rescue', 'Only the purchase price', 'The worker’s preferred color'], correct: 0 },
-      { q: 'What should a worker do when site conditions change?', a: ['Stop and reassess the hazards', 'Continue without telling anyone', 'Remove the protection system'], correct: 0 },
+      { q: 'At what height does general construction fall protection normally apply at an unprotected edge?', a: ['10 ft (3.0 m)', '6 ft (1.8 m)', '4 ft (1.2 m)', 'Only after a fall occurs'], correct: 1 },
+      { q: 'Which guardrail arrangement meets the stated OSHA criteria?', a: ['A 30-in top rail only', 'Plastic banding at 42 in', 'A 42-in top rail (±3 in) with a midrail when required', 'A warning sign without rails'], correct: 2 },
+      { q: 'What is the usual minimum anchorage capacity per attached employee for personal fall arrest?', a: ['5,000 lb (22.2 kN), unless a qualified-person system design applies', '500 lb (2.2 kN)', 'The worker’s body weight', '200 lb (890 N)'], correct: 0 },
+      { q: 'What is required after a personal fall-arrest system stops a fall?', a: ['Return it immediately after a visual glance', 'Use it only for light work', 'Let the worker decide', 'Remove it from service until inspected and cleared by a competent person'], correct: 3 },
+      { q: 'When is fall-protection retraining required?', a: ['Only every five years', 'When workplace/equipment changes or knowledge is inadequate', 'Only when requested by the worker', 'Never after initial training'], correct: 1 },
     ],
   },
   ar: {
@@ -42,13 +48,17 @@ const course = {
       { n: '02', title: 'استخدم وسيلة الحماية الصحيحة', text: 'أعطِ الأولوية للحواجز والأغطية والضوابط الهندسية. عند الحاجة إلى نظام إيقاف السقوط، استخدم مكونات معتمدة ونقطة تثبيت مناسبة وحزام جسم كامل مضبوطاً جيداً، وافحص النظام قبل الاستخدام.', ref: '29 CFR 1926.502' },
       { n: '03', title: 'خطط ونفّذ العمل بأمان', text: 'يجب أن يعالج الشخص المختص مخاطر الموقع ومتطلبات التدريب. حافظ على وصول آمن، واحمِ الفتحات، ورتّب منطقة العمل، ولا تعدّل نظام الحماية دون تصريح. أوقف العمل عند تغير الظروف أو المعدات.', ref: '29 CFR 1926.20; 1926.503' },
       { n: '04', title: 'الإنقاذ وإيقاف العمل', text: 'خطة إيقاف السقوط غير مكتملة دون إنقاذ سريع. اعرف طريقة طلب المساعدة، ولا ترتجل عملية إنقاذ، واعزل المنطقة، وأخرج المعدات المتأثرة من الخدمة حتى يعتمدها شخص مختص.', ref: '29 CFR 1926.502(d)(20)–(21)' },
+      { n: '05', title: 'أبعاد الحواجز ومقاومتها', text: 'يكون ارتفاع الحافة العليا للحاجز 42 بوصة (1.1 م) مع سماحية ±3 بوصات (8 سم). عند عدم وجود جدار أو حاجز مصمت بارتفاع 21 بوصة (53 سم) على الأقل، يُركّب حاجز أوسط في منتصف المسافة. يتحمل الحاجز العلوي 200 رطل (890 نيوتن) على الأقل، والأجزاء الوسطية 150 رطلاً (666 نيوتن).', ref: '29 CFR 1926.502(b)(1)–(5)' },
+      { n: '06', title: 'نقطة التثبيت ومسافة السقوط', text: 'يجب أن تكون نقطة تثبيت نظام إيقاف السقوط مستقلة عن نقاط تعليق المنصة وقادرة على تحمل 5000 رطل (22.2 كيلو نيوتن) لكل عامل، أو أن تكون جزءاً من نظام كامل بمعامل أمان لا يقل عن اثنين وتحت إشراف شخص مؤهل. احسب مسافة السقوط لمنع الاصطدام بمستوى أدنى.', ref: '29 CFR 1926.502(d)(15)–(16)' },
+      { n: '07', title: 'الفتحات والأجسام الساقطة', text: 'تُحمى الفتحات، بما فيها المناور، بأغطية أو حواجز أو نظام إيقاف سقوط حسب الحالة. يجب أن تمنع الأغطية التعثر وسقوط المواد أيضاً. استخدم الخوذ مع حواجز قدم أو شِباك أو مظلات أو مناطق عزل. الحد الأدنى لارتفاع حاجز القدم 3½ بوصة (9 سم).', ref: '29 CFR 1926.501(b)(4), 1926.501(c), 1926.502(j)' },
+      { n: '08', title: 'التدريب بواسطة شخص مختص', text: 'يجب أن يدرّب شخص مختص العاملين المعرّضين لخطر السقوط على تمييز المخاطر والاستخدام والفحص والتركيب والصيانة الصحيحة لأنظمة الحماية. يُعاد التدريب عند تغيّر الموقع أو المعدات أو ظهور قصور في معرفة العامل أو مهارته.', ref: '29 CFR 1926.503(a)–(c)' },
     ],
     quiz: [
-      { q: 'ما الإجراء المطلوب قبل بدء العمل على ارتفاع؟', a: ['تحديد المخاطر واختيار وسائل التحكم', 'الانتظار حتى يشتكي عامل', 'استخدام الحزام لكل مهمة دون تقييم'], correct: 0 },
-      { q: 'أي مما يلي وسيلة حماية هندسية من السقوط؟', a: ['نظام الحواجز', 'تحذير شفهي من زميل', 'العمل بسرعة أكبر'], correct: 0 },
-      { q: 'متى يجب فحص نظام إيقاف السقوط الشخصي؟', a: ['قبل الاستخدام', 'بعد السقوط فقط', 'مرة واحدة أثناء مدة العمل'], correct: 0 },
-      { q: 'ما الذي يجب أن تتضمنه خطة الحماية من السقوط؟', a: ['الإنقاذ السريع', 'سعر الشراء فقط', 'اللون المفضل للعامل'], correct: 0 },
-      { q: 'ماذا يفعل العامل عند تغير ظروف الموقع؟', a: ['يوقف العمل ويعيد تقييم المخاطر', 'يستمر دون إبلاغ أحد', 'يزيل نظام الحماية'], correct: 0 },
+      { q: 'متى تطبّق الحماية العامة من السقوط عند حافة غير محمية في الإنشاءات؟', a: ['10 أقدام', '6 أقدام (1.8 م)', '4 أقدام', 'بعد وقوع السقوط فقط'], correct: 1 },
+      { q: 'أي ترتيب للحواجز يوافق المتطلبات المذكورة؟', a: ['حاجز علوي بارتفاع 30 بوصة فقط', 'شريط بلاستيكي بارتفاع 42 بوصة', 'حاجز علوي 42 بوصة ±3 بوصات وحاجز أوسط عند الحاجة', 'لافتة تحذير فقط'], correct: 2 },
+      { q: 'ما قدرة التحمل المعتادة لنقطة تثبيت نظام إيقاف السقوط لكل عامل؟', a: ['5000 رطل (22.2 كيلو نيوتن)، ما لم يُستخدم تصميم نظام بإشراف شخص مؤهل', '500 رطل', 'وزن العامل فقط', '200 رطل'], correct: 0 },
+      { q: 'ماذا يحدث للنظام بعد أن يوقف سقوطاً؟', a: ['يُعاد استخدامه فوراً', 'يُستخدم للأعمال الخفيفة', 'يقرر العامل وحده', 'يُخرج من الخدمة حتى يفحصه ويعتمده شخص مختص'], correct: 3 },
+      { q: 'متى يلزم إعادة التدريب؟', a: ['كل خمس سنوات فقط', 'عند تغير الموقع أو المعدات أو عدم كفاية المعرفة', 'عند طلب العامل فقط', 'لا يلزم بعد التدريب الأول'], correct: 1 },
     ],
   },
   ur: {
@@ -57,13 +67,17 @@ const course = {
       { n: '02', title: 'درست تحفظ استعمال کریں', text: 'گارڈ ریل، کور یا دوسرے انجینئرنگ کنٹرول کو ترجیح دیں۔ ذاتی فال اریسٹ درکار ہو تو منظور شدہ حصے، مناسب اینکریج اور درست فِٹ والا فل باڈی ہارنس استعمال کریں۔ استعمال سے پہلے پورے نظام کا معائنہ کریں۔', ref: '29 CFR 1926.502' },
       { n: '03', title: 'منصوبہ بنائیں اور محفوظ کام کریں', text: 'مجاز شخص سائٹ کے خطرات اور تربیت کو دیکھے۔ محفوظ رسائی قائم رکھیں، سوراخ ڈھانپیں، جگہ صاف رکھیں اور اجازت کے بغیر نظام میں تبدیلی نہ کریں۔ حالات یا سامان بدلنے پر کام روک دیں۔', ref: '29 CFR 1926.20; 1926.503' },
       { n: '04', title: 'ریسکیو اور کام روکنے کے اقدامات', text: 'فوری ریسکیو کے بغیر فال اریسٹ منصوبہ نامکمل ہے۔ مدد بلانے کا طریقہ جانیں، خود ساختہ ریسکیو نہ کریں، علاقہ الگ کریں اور متاثرہ سامان کو مجاز شخص کی منظوری تک استعمال سے نکال دیں۔', ref: '29 CFR 1926.502(d)(20)–(21)' },
+      { n: '05', title: 'گارڈ ریل کی پیمائش اور مضبوطی', text: 'ٹاپ ریل کام کی سطح سے 42 انچ (1.1 میٹر)، ±3 انچ (8 سینٹی میٹر) ہو۔ اگر دیوار یا پیراپیٹ کم از کم 21 انچ (53 سینٹی میٹر) نہ ہو تو درمیان میں مڈ ریل لگائیں۔ ٹاپ ریل کم از کم 200 پاؤنڈ (890 نیوٹن) اور درمیانی حصے 150 پاؤنڈ (666 نیوٹن) قوت برداشت کریں۔', ref: '29 CFR 1926.502(b)(1)–(5)' },
+      { n: '06', title: 'اینکریج اور فال کلیئرنس', text: 'ذاتی فال اریسٹ اینکریج پلیٹ فارم کے سپورٹ اینکریج سے الگ ہو اور ہر منسلک کارکن کے لیے کم از کم 5000 پاؤنڈ (22.2 کلو نیوٹن) برداشت کرے، یا کسی اہل شخص کی نگرانی میں کم از کم دو کے حفاظتی عامل والے مکمل نظام کا حصہ ہو۔ نچلی سطح سے ٹکراؤ روکنے کے لیے مکمل فال فاصلہ شمار کریں۔', ref: '29 CFR 1926.502(d)(15)–(16)' },
+      { n: '07', title: 'سوراخ اور گرتی اشیا', text: 'اسکائی لائٹ سمیت سوراخوں کو ضرورت کے مطابق کور، گارڈ ریل یا ذاتی فال اریسٹ سے محفوظ کریں۔ کور ٹھوکر اور اشیا کے گرنے کو بھی روکے۔ نیچے موجود کارکنوں کے لیے ہیلمٹ کے ساتھ ٹو بورڈ، اسکرین، کینوپی یا بیریکیڈ استعمال کریں۔ ٹو بورڈ کم از کم 3½ انچ (9 سینٹی میٹر) اونچا ہو۔', ref: '29 CFR 1926.501(b)(4), 1926.501(c), 1926.502(j)' },
+      { n: '08', title: 'مجاز شخص کی تربیت', text: 'گرنے کے خطرے سے دوچار کارکنوں کو مجاز شخص خطرات پہچاننے اور حفاظتی نظام کے درست استعمال، معائنے، تنصیب اور دیکھ بھال کی تربیت دے۔ کام کی جگہ، سامان یا کارکن کی ظاہر شدہ سمجھ میں تبدیلی پر دوبارہ تربیت ضروری ہے۔', ref: '29 CFR 1926.503(a)–(c)' },
     ],
     quiz: [
-      { q: 'بلندی پر کام شروع کرنے سے پہلے کیا کرنا چاہیے؟', a: ['خطرات کی نشاندہی اور کنٹرول کا انتخاب', 'کسی شکایت کا انتظار', 'بغیر جائزے ہر کام میں ہارنس استعمال'], correct: 0 },
-      { q: 'انجینئرنگ فال پروٹیکشن کنٹرول کون سا ہے؟', a: ['گارڈ ریل نظام', 'ساتھی کی زبانی تنبیہ', 'زیادہ تیزی سے کام'], correct: 0 },
-      { q: 'ذاتی فال اریسٹ نظام کب چیک کرنا چاہیے؟', a: ['استعمال سے پہلے', 'صرف گرنے کے بعد', 'ملازمت میں صرف ایک بار'], correct: 0 },
-      { q: 'فال پروٹیکشن منصوبے میں کیا شامل ہونا چاہیے؟', a: ['فوری ریسکیو', 'صرف خریداری کی قیمت', 'کارکن کا پسندیدہ رنگ'], correct: 0 },
-      { q: 'سائٹ کے حالات بدلنے پر کارکن کیا کرے؟', a: ['کام روک کر خطرات کا دوبارہ جائزہ', 'کسی کو بتائے بغیر جاری رکھے', 'تحفظ کا نظام ہٹا دے'], correct: 0 },
+      { q: 'تعمیرات میں غیر محفوظ کنارے پر عمومی فال پروٹیکشن کس بلندی پر درکار ہے؟', a: ['10 فٹ', '6 فٹ (1.8 میٹر)', '4 فٹ', 'صرف حادثے کے بعد'], correct: 1 },
+      { q: 'کون سا گارڈ ریل انتظام بیان کردہ معیار پورا کرتا ہے؟', a: ['صرف 30 انچ ٹاپ ریل', '42 انچ پر پلاسٹک بینڈ', '42 انچ ±3 انچ ٹاپ ریل اور ضرورت پر مڈ ریل', 'صرف تنبیہی بورڈ'], correct: 2 },
+      { q: 'ذاتی فال اریسٹ اینکریج کی عام کم از کم صلاحیت فی کارکن کیا ہے؟', a: ['5000 پاؤنڈ (22.2 کلو نیوٹن)، جب تک اہل شخص کا ڈیزائن شدہ نظام نہ ہو', '500 پاؤنڈ', 'صرف کارکن کا وزن', '200 پاؤنڈ'], correct: 0 },
+      { q: 'فال روکنے کے بعد نظام کے ساتھ کیا کیا جائے؟', a: ['فوراً دوبارہ استعمال', 'صرف ہلکے کام میں استعمال', 'کارکن خود فیصلہ کرے', 'مجاز شخص کے معائنے اور منظوری تک استعمال سے خارج'], correct: 3 },
+      { q: 'دوبارہ تربیت کب ضروری ہے؟', a: ['صرف ہر پانچ سال بعد', 'جگہ یا سامان بدلے یا علم ناکافی ہو', 'صرف کارکن کے کہنے پر', 'ابتدائی تربیت کے بعد کبھی نہیں'], correct: 1 },
     ],
   },
   hi: {
@@ -72,13 +86,17 @@ const course = {
       { n: '02', title: 'सही सुरक्षा चुनें', text: 'गार्डरेल, कवर या अन्य इंजीनियरिंग नियंत्रण को प्राथमिकता दें। व्यक्तिगत फॉल-अरेस्ट आवश्यक हो तो अनुमोदित हिस्से, उपयुक्त एंकर और सही फिट वाला फुल-बॉडी हार्नेस इस्तेमाल करें। उपयोग से पहले पूरी प्रणाली जाँचें।', ref: '29 CFR 1926.502' },
       { n: '03', title: 'योजना बनाकर सुरक्षित काम करें', text: 'सक्षम व्यक्ति साइट के खतरों और प्रशिक्षण का प्रबंध करे। सुरक्षित पहुँच रखें, खुले स्थान सुरक्षित करें, कार्यक्षेत्र व्यवस्थित रखें और अनुमति के बिना प्रणाली न बदलें। स्थिति या उपकरण बदलने पर काम रोकें।', ref: '29 CFR 1926.20; 1926.503' },
       { n: '04', title: 'बचाव और काम रोकने की कार्रवाई', text: 'शीघ्र बचाव के बिना फॉल-अरेस्ट योजना अधूरी है। सहायता बुलाने की विधि जानें, मनमाना बचाव न करें, क्षेत्र को अलग करें और प्रभावित उपकरण को सक्षम व्यक्ति की मंज़ूरी तक सेवा से बाहर रखें।', ref: '29 CFR 1926.502(d)(20)–(21)' },
+      { n: '05', title: 'गार्डरेल की माप और मजबूती', text: 'टॉप रेल कार्य-स्तर से 42 इंच (1.1 मीटर), ±3 इंच (8 सेमी) ऊँची होनी चाहिए। कम-से-कम 21 इंच (53 सेमी) की दीवार या पैरापेट न हो तो बीच में मिडरेल लगाएँ। टॉप रेल कम-से-कम 200 पाउंड (890 N) और मध्य सदस्य 150 पाउंड (666 N) बल सहें।', ref: '29 CFR 1926.502(b)(1)–(5)' },
+      { n: '06', title: 'एंकर और गिरने की दूरी', text: 'व्यक्तिगत फॉल-अरेस्ट एंकर प्लेटफ़ॉर्म-सपोर्ट एंकर से स्वतंत्र हो और प्रत्येक जुड़े कर्मचारी के लिए कम-से-कम 5,000 पाउंड (22.2 kN) सह सके, या योग्य व्यक्ति की देखरेख में कम-से-कम दो सुरक्षा-गुणक वाले पूर्ण सिस्टम का हिस्सा हो। निचले स्तर से टकराव रोकने के लिए पूरी फॉल दूरी की गणना करें।', ref: '29 CFR 1926.502(d)(15)–(16)' },
+      { n: '07', title: 'खुले स्थान और गिरती वस्तुएँ', text: 'स्काइलाइट सहित खुले स्थानों को परिस्थिति के अनुसार कवर, गार्डरेल या व्यक्तिगत फॉल-अरेस्ट से सुरक्षित करें। कवर ठोकर और वस्तुओं के गिरने को भी रोकें। नीचे के कर्मियों के लिए हार्ड हैट के साथ टोबोर्ड, स्क्रीन, कैनोपी या बैरिकेड लगाएँ। टोबोर्ड कम-से-कम 3½ इंच (9 सेमी) ऊँचा हो।', ref: '29 CFR 1926.501(b)(4), 1926.501(c), 1926.502(j)' },
+      { n: '08', title: 'सक्षम व्यक्ति द्वारा प्रशिक्षण', text: 'गिरने के जोखिम वाले कर्मचारियों को सक्षम व्यक्ति खतरे पहचानने और सुरक्षा प्रणालियों के सही उपयोग, निरीक्षण, स्थापना और रखरखाव का प्रशिक्षण दे। कार्यस्थल, उपकरण या कर्मचारी की प्रदर्शित समझ बदलने पर पुनः प्रशिक्षण आवश्यक है।', ref: '29 CFR 1926.503(a)–(c)' },
     ],
     quiz: [
-      { q: 'ऊँचाई पर काम शुरू करने से पहले क्या होना चाहिए?', a: ['खतरों की पहचान और नियंत्रण का चयन', 'किसी शिकायत की प्रतीक्षा', 'बिना मूल्यांकन हर काम में हार्नेस'], correct: 0 },
-      { q: 'इंजीनियरिंग गिरावट-सुरक्षा नियंत्रण कौन सा है?', a: ['गार्डरेल प्रणाली', 'सहकर्मी की आवाज़ में चेतावनी', 'तेज़ काम करना'], correct: 0 },
-      { q: 'व्यक्तिगत फॉल-अरेस्ट प्रणाली कब जाँची जानी चाहिए?', a: ['उपयोग से पहले', 'केवल गिरावट के बाद', 'रोज़गार में केवल एक बार'], correct: 0 },
-      { q: 'गिरावट-सुरक्षा योजना में क्या शामिल होना चाहिए?', a: ['शीघ्र बचाव', 'केवल खरीद मूल्य', 'कर्मचारी का पसंदीदा रंग'], correct: 0 },
-      { q: 'साइट की स्थिति बदलने पर कर्मचारी को क्या करना चाहिए?', a: ['काम रोककर खतरे दोबारा जाँचना', 'बिना बताए काम जारी रखना', 'सुरक्षा प्रणाली हटा देना'], correct: 0 },
+      { q: 'निर्माण में असुरक्षित किनारे पर सामान्य गिरावट-सुरक्षा किस ऊँचाई से लागू होती है?', a: ['10 फीट', '6 फीट (1.8 मीटर)', '4 फीट', 'केवल गिरने के बाद'], correct: 1 },
+      { q: 'कौन-सी गार्डरेल व्यवस्था बताए गए मानदंड को पूरा करती है?', a: ['केवल 30 इंच टॉप रेल', '42 इंच पर प्लास्टिक बैंड', '42 इंच ±3 इंच टॉप रेल और आवश्यकता पर मिडरेल', 'केवल चेतावनी संकेत'], correct: 2 },
+      { q: 'व्यक्तिगत फॉल-अरेस्ट एंकर की सामान्य न्यूनतम क्षमता प्रति कर्मचारी क्या है?', a: ['5,000 पाउंड (22.2 kN), जब तक योग्य व्यक्ति की सिस्टम डिज़ाइन लागू न हो', '500 पाउंड', 'केवल कर्मचारी का वजन', '200 पाउंड'], correct: 0 },
+      { q: 'गिरावट रोकने के बाद सिस्टम के साथ क्या करना चाहिए?', a: ['तुरंत दोबारा उपयोग', 'केवल हल्के काम में उपयोग', 'कर्मचारी स्वयं तय करे', 'सक्षम व्यक्ति के निरीक्षण और स्वीकृति तक सेवा से बाहर रखें'], correct: 3 },
+      { q: 'पुनः प्रशिक्षण कब आवश्यक है?', a: ['केवल हर पाँच वर्ष', 'कार्यस्थल/उपकरण बदले या ज्ञान अपर्याप्त हो', 'केवल कर्मचारी के अनुरोध पर', 'प्रारंभिक प्रशिक्षण के बाद कभी नहीं'], correct: 1 },
     ],
   },
 };
@@ -94,12 +112,28 @@ export default function Home() {
   const [score, setScore] = useState(0);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [idNumber, setIdNumber] = useState('');
+  const [idToken, setIdToken] = useState('');
+  const [authMode, setAuthMode] = useState<'signup' | 'signin'>('signup');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [lockoutUntil, setLockoutUntil] = useState('');
+  const [certificate, setCertificate] = useState<CertificateRecord | null>(null);
+  const [certificates, setCertificates] = useState<CertificateRecord[]>([]);
   const [passwordMessage, setPasswordMessage] = useState('');
   const t = copy[lang];
   const data = course[lang];
   const rtl = languages.find((item) => item.code === lang)?.rtl;
   const allAnswered = answers.every((value) => value >= 0);
-  const locked = attempts >= 3 && !passed;
+  const locked = Boolean(lockoutUntil && new Date(lockoutUntil) > new Date()) && !passed;
+
+  useEffect(() => {
+    if (view !== 'profile' || !idToken) return;
+    getProfile(idToken).then((profile) => {
+      setName(profile.fullName || name);
+      setCertificates(profile.certificates);
+    }).catch((problem: Error) => setError(problem.message));
+  }, [view, idToken]);
 
   const progress = useMemo(() => {
     if (passed) return 100;
@@ -114,30 +148,87 @@ export default function Home() {
     setView('account');
   }
 
-  function createAccount(event: FormEvent<HTMLFormElement>) {
+  async function authenticate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    const fullName = String(form.get('name') || '').trim();
+    const accountEmail = String(form.get('email') || '').trim();
     const first = String(form.get('password') || '');
     const second = String(form.get('confirm') || '');
-    if (first.length < 8 || first !== second) return;
-    setName(String(form.get('name') || 'Learner'));
-    setEmail(String(form.get('email') || ''));
-    setView('dashboard');
+    if (first.length < 8 || (authMode === 'signup' && first !== second)) {
+      setError('Passwords must match and contain at least 8 characters.');
+      return;
+    }
+    setBusy(true);
+    setError('');
+    try {
+      const session = authMode === 'signup'
+        ? await signUp(accountEmail, first, fullName)
+        : await signIn(accountEmail, first);
+      const resolvedName = fullName || session.displayName || accountEmail.split('@')[0];
+      await registerLearner(session.idToken, resolvedName, lang);
+      setIdToken(session.idToken);
+      setName(resolvedName);
+      setEmail(session.email || accountEmail);
+      setView('dashboard');
+    } catch (problem) {
+      setError(problem instanceof Error ? problem.message : 'Unable to sign in.');
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function gradeQuiz() {
+  async function gradeQuiz() {
     const correct = answers.reduce((total, answer, index) => total + (answer === data.quiz[index].correct ? 1 : 0), 0);
     const result = correct * 20;
-    setScore(result);
-    setAttempts((value) => value + 1);
-    setPassed(result >= 80);
-    setView('result');
+    setBusy(true);
+    setError('');
+    try {
+      const record = await submitAttempt({
+        idToken, courseId: 'WAH-001', courseTitle: t.lesson, learnerName: name,
+        idNumber, language: lang, answers, scorePercent: result, correctAnswers: correct,
+        totalQuestions: data.quiz.length, startedAt: new Date().toISOString(),
+        oshaReferences: '29 CFR 1926.500; 1926.501; 1926.502; 1926.503',
+      });
+      setScore(result);
+      setAttempts(record.attemptNumber);
+      setPassed(record.passed);
+      setLockoutUntil(record.lockoutUntil || '');
+      setCertificate(record.certificate || null);
+      setView('result');
+    } catch (problem) {
+      setError(problem instanceof Error ? problem.message : 'Unable to record the assessment.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   function retry() {
     setAnswers([-1, -1, -1, -1, -1]);
     setSlide(0);
     setView('lesson');
+  }
+
+  async function updatePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const first = String(form.get('password') || '');
+    const second = String(form.get('confirm') || '');
+    if (first.length < 8 || first !== second) { setPasswordMessage('Passwords must match and contain at least 8 characters.'); return; }
+    setBusy(true);
+    try {
+      const session = await changePassword(idToken, first);
+      setIdToken(session.idToken);
+      setPasswordMessage(t.saved);
+      event.currentTarget.reset();
+    } catch (problem) {
+      setPasswordMessage(problem instanceof Error ? problem.message : 'Password change failed.');
+    } finally { setBusy(false); }
+  }
+
+  function signOut() {
+    setView('language'); setSelected(''); setName(''); setEmail(''); setIdToken('');
+    setAttempts(0); setPassed(false); setCertificates([]); setCertificate(null); setError('');
   }
 
   return (
@@ -162,27 +253,27 @@ export default function Home() {
       )}
 
       {view === 'account' && (
-        <section className="narrow"><button type="button" onClick={() => setView('language')} className="back-link">← {copy[lang].choose}</button><div className="panel mt-4"><p className="step">Step 2 of 3</p><h1 className="panel-title">{t.account}</h1><p className="panel-copy">{t.accountHelp}</p><form onSubmit={createAccount} className="mt-7 space-y-4"><label className="field"><span>{t.name}</span><input name="name" required autoComplete="name" /></label><label className="field"><span>{t.email}</span><input name="email" type="email" required autoComplete="email" /></label><label className="field"><span>{t.password}</span><input name="password" type="password" required minLength={8} autoComplete="new-password" /></label><label className="field"><span>{t.confirm}</span><input name="confirm" type="password" required minLength={8} autoComplete="new-password" /></label><p className="text-xs text-[#6d7c73]">Minimum 8 characters. Passwords are handled by the production authentication provider and never written to Google Sheets.</p><button className="primary-button">{t.create}</button></form></div></section>
+        <section className="narrow"><button type="button" onClick={() => setView('language')} className="back-link">← {copy[lang].choose}</button><div className="panel mt-4"><p className="step">Step 2 of 3</p><h1 className="panel-title">{t.account}</h1><p className="panel-copy">{t.accountHelp}</p><div className="mt-5 grid grid-cols-2 gap-2 rounded-xl bg-[#eef4f0] p-1"><button type="button" onClick={() => { setAuthMode('signup'); setError(''); }} className={authMode === 'signup' ? 'rounded-lg bg-white p-3 font-bold shadow-sm' : 'p-3 font-bold text-[#5f7066]'}>Create account</button><button type="button" onClick={() => { setAuthMode('signin'); setError(''); }} className={authMode === 'signin' ? 'rounded-lg bg-white p-3 font-bold shadow-sm' : 'p-3 font-bold text-[#5f7066]'}>Sign in</button></div><form onSubmit={authenticate} className="mt-6 space-y-4">{authMode === 'signup' && <><label className="field"><span>{t.name}</span><input name="name" required autoComplete="name" /></label><label className="field"><span>ID / Iqama number</span><input name="idNumber" required value={idNumber} onChange={(event) => setIdNumber(event.target.value)} autoComplete="off" /></label></>}<label className="field"><span>{t.email}</span><input name="email" type="email" required autoComplete="email" /></label><label className="field"><span>{t.password}</span><input name="password" type="password" required minLength={8} autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'} /></label>{authMode === 'signup' && <label className="field"><span>{t.confirm}</span><input name="confirm" type="password" required minLength={8} autoComplete="new-password" /></label>}<p className="text-xs text-[#6d7c73]">Passwords are handled only by Firebase Authentication and are never written to Google Sheets.</p>{error && <p className="rounded-xl bg-[#fff0ec] p-3 text-sm font-bold text-[#9a302b]">{error}</p>}<button disabled={busy} className="primary-button">{busy ? 'Please wait…' : authMode === 'signup' ? t.create : 'Sign in'}</button>{authMode === 'signin' && <button type="button" className="w-full text-sm font-bold text-[#087b41]" onClick={async () => { const accountEmail = (document.querySelector('input[name=email]') as HTMLInputElement)?.value; if (!accountEmail) { setError('Enter your email address first.'); return; } try { await sendPasswordReset(accountEmail); setError('Password reset email sent.'); } catch (problem) { setError(problem instanceof Error ? problem.message : 'Reset failed.'); } }}>Forgot password?</button>}</form></div></section>
       )}
 
       {view === 'dashboard' && (
-        <section className="mx-auto w-full max-w-6xl px-5 py-9 sm:px-8"><p className="step">{t.welcome}, {name || 'Learner'}</p><div className="mt-2 flex flex-wrap items-end justify-between gap-4"><div><h1 className="text-3xl font-black tracking-tight sm:text-4xl">{t.progress}</h1><p className="mt-2 text-sm text-[#65756c]">{email}</p></div><span className="pill">1 of 12 courses active</span></div><article className="course-card mt-8"><div className="course-visual"><span>01</span><b>FALL<br/>PROTECTION</b></div><div className="flex-1 p-6 sm:p-8"><div className="flex flex-wrap gap-2"><span className="tag">29 CFR 1926 Subpart M</span><span className="tag">Awareness</span></div><h2 className="mt-5 text-2xl font-black">{t.lesson}</h2><div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[#596b61]"><span>{t.cards}</span><span>{t.questions}</span><span>{t.pass}</span></div>{locked && <div className="mt-5 rounded-xl bg-[#fff3dd] p-4 text-sm font-semibold text-[#7a5011]">{t.lock}</div>}<button type="button" disabled={locked} onClick={() => { setSlide(0); setView('lesson'); }} className="primary-button mt-6 sm:w-auto sm:px-8">{attempts ? t.resume : t.start}</button></div></article><h2 className="mt-10 text-lg font-black">Upcoming modules</h2><div className="mt-4 grid gap-3 sm:grid-cols-3">{['Confined Spaces', 'Lifting & Rigging', 'Fire Watch'].map((item) => <div key={item} className="rounded-2xl border border-[#dce6df] bg-white p-5"><span className="text-xs font-bold uppercase tracking-wider text-[#849188]">Coming next</span><h3 className="mt-2 font-extrabold">{item}</h3></div>)}</div></section>
+        <section className="mx-auto w-full max-w-6xl px-5 py-9 sm:px-8"><p className="step">{t.welcome}, {name || 'Learner'}</p><div className="mt-2 flex flex-wrap items-end justify-between gap-4"><div><h1 className="text-3xl font-black tracking-tight sm:text-4xl">{t.progress}</h1><p className="mt-2 text-sm text-[#65756c]">{email}</p></div><span className="pill">1 course active</span></div><article className="course-card mt-8"><div className="course-visual"><span>01</span><b>FALL<br/>PROTECTION</b></div><div className="flex-1 p-6 sm:p-8"><div className="flex flex-wrap gap-2"><span className="tag">29 CFR 1926 Subpart M</span><span className="tag">Awareness</span></div><h2 className="mt-5 text-2xl font-black">{t.lesson}</h2><div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[#596b61]"><span>{t.cards}</span><span>{t.questions}</span><span>{t.pass}</span></div>{!idNumber && <label className="field mt-5"><span>ID / Iqama number for the certificate</span><input value={idNumber} onChange={(event) => setIdNumber(event.target.value)} required /></label>}{locked && <div className="mt-5 rounded-xl bg-[#fff3dd] p-4 text-sm font-semibold text-[#7a5011]">{t.lock}<br/>{lockoutUntil}</div>}<button type="button" disabled={locked || !idNumber} onClick={() => { setSlide(0); setView('lesson'); }} className="primary-button mt-6 sm:w-auto sm:px-8">{attempts ? t.resume : t.start}</button></div></article><h2 className="mt-10 text-lg font-black">Upcoming modules</h2><div className="mt-4 grid gap-3 sm:grid-cols-3">{['Confined Spaces', 'Lifting & Rigging', 'Fire Watch'].map((item) => <div key={item} className="rounded-2xl border border-[#dce6df] bg-white p-5"><span className="text-xs font-bold uppercase tracking-wider text-[#849188]">Coming next</span><h3 className="mt-2 font-extrabold">{item}</h3></div>)}</div></section>
       )}
 
       {view === 'lesson' && (
-        <section className="narrow-wide"><div className="flex items-center justify-between gap-4"><button type="button" className="back-link" onClick={() => setView('dashboard')}>← {t.dashboard}</button><span className="text-xs font-bold text-[#65766c]">{slide + 1} / 4</span></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-[#dce8df]"><div className="h-full rounded-full bg-[#0a8a49] transition-all" style={{ width: `${(slide + 1) * 25}%` }} /></div><article className="lesson-card mt-6"><div className="lesson-number">{data.slides[slide].n}</div><p className="step">{t.lesson}</p><h1 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">{data.slides[slide].title}</h1><p className="mt-6 text-base leading-8 text-[#43594d] sm:text-lg">{data.slides[slide].text}</p><div className="mt-8 rounded-2xl bg-[#edf7f0] p-4"><span className="text-xs font-bold uppercase tracking-wider text-[#16814c]">{t.standard}</span><p className="mt-1 font-bold">{data.slides[slide].ref}</p></div><button type="button" onClick={() => slide < 3 ? setSlide(slide + 1) : setView('quiz')} className="primary-button mt-8">{slide < 3 ? t.next : t.quiz}</button></article></section>
+        <section className="narrow-wide"><div className="flex items-center justify-between gap-4"><button type="button" className="back-link" onClick={() => setView('dashboard')}>← {t.dashboard}</button><span className="text-xs font-bold text-[#65766c]">{slide + 1} / {data.slides.length}</span></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-[#dce8df]"><div className="h-full rounded-full bg-[#0a8a49] transition-all" style={{ width: `${((slide + 1) / data.slides.length) * 100}%` }} /></div><article className="lesson-card mt-6"><div className="lesson-number">{data.slides[slide].n}</div><p className="step">{t.lesson}</p><h1 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">{data.slides[slide].title}</h1><p className="mt-6 text-base leading-8 text-[#43594d] sm:text-lg">{data.slides[slide].text}</p><div className="mt-8 rounded-2xl bg-[#edf7f0] p-4"><span className="text-xs font-bold uppercase tracking-wider text-[#16814c]">{t.standard}</span><p className="mt-1 font-bold">{data.slides[slide].ref}</p></div><button type="button" onClick={() => slide < data.slides.length - 1 ? setSlide(slide + 1) : setView('quiz')} className="primary-button mt-8">{slide < data.slides.length - 1 ? t.next : t.quiz}</button></article></section>
       )}
 
       {view === 'quiz' && (
-        <section className="narrow-wide"><button type="button" className="back-link" onClick={() => setView('lesson')}>← {t.lesson}</button><div className="mt-5"><p className="step">Assessment · Attempt {attempts + 1} of 3</p><h1 className="mt-2 text-3xl font-black">{t.questions} · {t.pass}</h1></div><div className="mt-7 space-y-5">{data.quiz.map((item, index) => <fieldset key={item.q} className="question-card"><legend className="font-extrabold"><span className="text-[#12824a]">{t.question} {index + 1}.</span> {item.q}</legend><div className="mt-4 space-y-2">{item.a.map((option, optionIndex) => <label key={option} className={`option ${answers[index] === optionIndex ? 'chosen' : ''}`}><input type="radio" name={`q-${index}`} checked={answers[index] === optionIndex} onChange={() => setAnswers((current) => current.map((value, answerIndex) => answerIndex === index ? optionIndex : value))} /><span>{option}</span></label>)}</div></fieldset>)}</div><button type="button" disabled={!allAnswered} onClick={gradeQuiz} className="primary-button mt-6">{t.submit}</button></section>
+        <section className="narrow-wide"><button type="button" className="back-link" onClick={() => setView('lesson')}>← {t.lesson}</button><div className="mt-5"><p className="step">Assessment · Attempt {attempts + 1} of 3</p><h1 className="mt-2 text-3xl font-black">{t.questions} · {t.pass}</h1></div><div className="mt-7 space-y-5">{data.quiz.map((item, index) => <fieldset key={item.q} className="question-card"><legend className="font-extrabold"><span className="text-[#12824a]">{t.question} {index + 1}.</span> {item.q}</legend><div className="mt-4 space-y-2">{item.a.map((option, optionIndex) => <label key={option} className={`option ${answers[index] === optionIndex ? 'chosen' : ''}`}><input type="radio" name={`q-${index}`} checked={answers[index] === optionIndex} onChange={() => setAnswers((current) => current.map((value, answerIndex) => answerIndex === index ? optionIndex : value))} /><span><b>{String.fromCharCode(65 + optionIndex)}.</b> {option}</span></label>)}</div></fieldset>)}</div>{error && <p className="mt-4 rounded-xl bg-[#fff0ec] p-3 text-sm font-bold text-[#9a302b]">{error}</p>}<button type="button" disabled={!allAnswered || busy} onClick={gradeQuiz} className="primary-button mt-6">{busy ? 'Recording…' : t.submit}</button></section>
       )}
 
       {view === 'result' && (
-        <section className="narrow"><div className={`result-card ${passed ? 'success' : 'failure'}`}><div className="result-icon">{passed ? '✓' : '!'}</div><p className="step">{t.score}: {score}%</p><h1 className="mt-3 text-3xl font-black">{passed ? t.passed : t.failed}</h1><div className="mt-6 grid grid-cols-2 gap-3"><div className="metric"><b>{score}%</b><span>{t.score}</span></div><div className="metric"><b>{attempts}/3</b><span>{t.attempts}</span></div></div>{passed && <div className="mt-5 rounded-2xl bg-white/70 p-5"><p className="font-extrabold">{t.certificate}</p><p className="mt-1 text-sm text-[#5b6c62]">{name} · {email}<br/>Certificate ID: TDC-WAH-2026-DEMO</p></div>}{!passed && attempts >= 3 && <p className="mt-5 rounded-xl bg-white/70 p-4 text-sm font-bold">{t.lock}</p>}<div className="mt-6 flex flex-col gap-3 sm:flex-row">{!passed && attempts < 3 && <button type="button" onClick={retry} className="primary-button">{t.retry}</button>}<button type="button" onClick={() => setView('dashboard')} className="secondary-button">{t.dashboard}</button></div></div></section>
+        <section className="narrow"><div className={`result-card ${passed ? 'success' : 'failure'}`}><div className="result-icon">{passed ? '✓' : '!'}</div><p className="step">{t.score}: {score}%</p><h1 className="mt-3 text-3xl font-black">{passed ? t.passed : t.failed}</h1><div className="mt-6 grid grid-cols-2 gap-3"><div className="metric"><b>{score}%</b><span>{t.score}</span></div><div className="metric"><b>{attempts}/3</b><span>{t.attempts}</span></div></div>{passed && certificate && <div className="mt-5 rounded-2xl bg-white/70 p-5"><p className="font-extrabold">{t.certificate}</p><p className="mt-1 text-sm text-[#5b6c62]">{name} · {email}<br/>Serial Number: {certificate.certificateId}</p><a href={certificate.downloadUrl} target="_blank" rel="noreferrer" className="primary-button mt-4">Download PDF</a></div>}{!passed && locked && <p className="mt-5 rounded-xl bg-white/70 p-4 text-sm font-bold">{t.lock}<br/>{lockoutUntil}</p>}<div className="mt-6 flex flex-col gap-3 sm:flex-row">{!passed && !locked && <button type="button" onClick={retry} className="primary-button">{t.retry}</button>}<button type="button" onClick={() => setView('dashboard')} className="secondary-button">{t.dashboard}</button></div></div></section>
       )}
 
       {view === 'profile' && (
-        <section className="narrow"><button type="button" className="back-link" onClick={() => setView('dashboard')}>← {t.dashboard}</button><div className="panel mt-4"><p className="step">{t.profile}</p><h1 className="panel-title">{name}</h1><p className="panel-copy">{email}</p><form className="mt-7 space-y-4" onSubmit={(event) => { event.preventDefault(); setPasswordMessage(t.saved); }}><label className="field"><span>{t.password}</span><input type="password" minLength={8} required autoComplete="new-password" /></label><label className="field"><span>{t.confirm}</span><input type="password" minLength={8} required autoComplete="new-password" /></label><button className="primary-button">{t.save}</button>{passwordMessage && <p className="rounded-xl bg-[#eaf7ee] p-3 text-sm font-bold text-[#08733e]">{passwordMessage}</p>}</form><button type="button" onClick={() => { setView('language'); setSelected(''); setName(''); setEmail(''); }} className="mt-6 text-sm font-bold text-[#9a302b]">{t.signout}</button></div></section>
+        <section className="narrow"><button type="button" className="back-link" onClick={() => setView('dashboard')}>← {t.dashboard}</button><div className="panel mt-4"><p className="step">{t.profile}</p><h1 className="panel-title">{name}</h1><p className="panel-copy">{email}</p><h2 className="mt-7 text-lg font-black">Certificates</h2><div className="mt-3 space-y-3">{certificates.length ? certificates.map((item) => <article key={item.certificateId} className="rounded-xl border border-[#dce6df] p-4"><b>{item.courseTitle}</b><p className="mt-1 text-xs text-[#607067]">{item.certificateId} · {item.completionDate} · {item.scorePercent}%</p><a href={item.downloadUrl} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm font-black text-[#087b41]">Download PDF</a></article>) : <p className="text-sm text-[#607067]">No certificates issued yet.</p>}</div><form className="mt-8 space-y-4 border-t border-[#dce6df] pt-7" onSubmit={updatePassword}><h2 className="text-lg font-black">Change password</h2><label className="field"><span>{t.password}</span><input name="password" type="password" minLength={8} required autoComplete="new-password" /></label><label className="field"><span>{t.confirm}</span><input name="confirm" type="password" minLength={8} required autoComplete="new-password" /></label><button disabled={busy} className="primary-button">{t.save}</button>{passwordMessage && <p className="rounded-xl bg-[#eaf7ee] p-3 text-sm font-bold text-[#08733e]">{passwordMessage}</p>}</form><button type="button" onClick={signOut} className="mt-6 text-sm font-bold text-[#9a302b]">{t.signout}</button></div></section>
       )}
 
       <footer className="mx-auto mt-10 w-full max-w-6xl border-t border-[#d9e5dd] px-5 py-7 text-xs leading-5 text-[#6d7c73] sm:px-8">TDC Safety Academy · Course-completion training. Employer-specific instruction and practical evaluation may also be required.</footer>
