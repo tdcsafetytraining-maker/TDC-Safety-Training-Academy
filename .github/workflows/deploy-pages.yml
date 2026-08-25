@@ -32,6 +32,9 @@ jobs:
         run: pnpm install --no-frozen-lockfile
       - name: Build static website
         run: pnpm build
+        env:
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_TDC_BACKEND_URL: ${{ secrets.NEXT_PUBLIC_TDC_BACKEND_URL }}
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload website artifact
