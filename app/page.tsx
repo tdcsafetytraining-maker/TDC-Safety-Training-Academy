@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { CertificateRecord, getProfile, registerLearner, submitAttempt } from '../lib/backend';
 import { changePassword, FirebaseSession, refreshSession, sendPasswordReset, signIn, signUp } from '../lib/firebase-rest';
 import { confinedSpaceCourse, courseCatalog } from '../lib/course-catalog';
+import { scaffoldCourse } from '../lib/phase-one-courses';
 
 type Lang = 'en' | 'ar' | 'ur' | 'hi';
 type View = 'language' | 'account' | 'dashboard' | 'lesson' | 'quiz' | 'result' | 'profile';
@@ -137,7 +138,7 @@ export default function Home() {
   const [activeCourseId, setActiveCourseId] = useState('WAH-001');
   const [completedCourseIds, setCompletedCourseIds] = useState<string[]>([]);
   const activeCourse = courseCatalog.find((item) => item.id === activeCourseId) || courseCatalog[0];
-  const data = activeCourseId === 'CSP-002' ? confinedSpaceCourse[lang] : course[lang];
+  const data = activeCourseId === 'CSP-002' ? confinedSpaceCourse[lang] : activeCourseId === 'SCA-003' ? scaffoldCourse[lang] : course[lang];
   const courseTitle = activeCourse.titles[lang];
   const t = { ...copy[lang], lesson: courseTitle };
   const rtl = languages.find((item) => item.code === lang)?.rtl;
