@@ -71,7 +71,6 @@ function submitAttempt_(identity, request) {
     const courseId = clean_(request.courseId, 50);
     const courseTitle = clean_(request.courseTitle, 160);
     const learnerName = clean_(request.learnerName || identity.displayName || 'Learner', 120);
-    const idNumber = clean_(request.idNumber || '', 60);
     const language = allowedLanguage_(request.language);
     verifyCourseUnlocked_(identity.uid, courseId);
     const grading = gradeAnswers_(courseId, request.answers);
@@ -102,7 +101,6 @@ function submitAttempt_(identity, request) {
     let certificate;
     if (passed) certificate = completeCourse_(identity, {
       learnerName: learnerName,
-      idNumber: idNumber,
       courseId: courseId,
       courseTitle: courseTitle,
       language: language,
@@ -149,7 +147,7 @@ function completeCourse_(identity, result) {
     const presentation = SlidesApp.openById(workingCopy.getId());
     const replacements = {
       '{{TRAINEE_NAME}}': result.learnerName,
-      '{{ID_NUMBER}}': result.idNumber || 'N/A',
+      '{{ID_NUMBER}}': '',
       '{{SCORE_PERCENT}}': String(result.score),
       '{{COURSE_TITLE}}': result.courseTitle,
       '{{COMPLETION_DATE}}': Utilities.formatDate(result.completedAt, SETTINGS.timeZone, 'dd-MM-yyyy'),

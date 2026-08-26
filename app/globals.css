@@ -52,6 +52,8 @@ button:focus-visible { outline: 3px solid rgba(8, 123, 65, 0.3); outline-offset:
 .option { display: flex; cursor: pointer; align-items: flex-start; gap: .75rem; border: 1px solid #e0e8e2; border-radius: .85rem; padding: .8rem; font-size: .9rem; line-height: 1.45; transition: .15s; }
 .option.chosen { border-color: #0a8649; background: #eff9f2; }
 .option input { margin-top: .2rem; accent-color: #087b41; }
+.option-letter { direction: ltr; unicode-bidi: isolate; flex: none; font-weight: 850; }
+.option-text { min-width: 0; flex: 1; }
 .result-card { border-radius: 1.8rem; padding: clamp(1.5rem, 6vw, 2.5rem); box-shadow: 0 22px 70px rgba(20,70,41,.1); }
 .result-card.success { border: 1px solid #b9dec7; background: #eaf8ef; }
 .result-card.failure { border: 1px solid #efd5ba; background: #fff5e8; }

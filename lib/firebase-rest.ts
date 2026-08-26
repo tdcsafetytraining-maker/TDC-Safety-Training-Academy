@@ -39,6 +39,7 @@ async function request(action: string, body: Record<string, unknown>) {
 
 export async function signUp(email: string, password: string, displayName: string) {
   const session = await request('signUp', { email, password, returnSecureToken: true });
+  if (!displayName.trim()) return session;
   return request('update', { idToken: session.idToken, displayName, returnSecureToken: true });
 }
 
@@ -74,3 +75,4 @@ export function changePassword(idToken: string, password: string) {
 export function sendPasswordReset(email: string) {
   return request('sendOobCode', { requestType: 'PASSWORD_RESET', email });
 }
+

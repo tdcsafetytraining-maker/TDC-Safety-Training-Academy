@@ -20,7 +20,6 @@ type StoredAuth = {
   refreshToken: string;
   email: string;
   name: string;
-  idNumber: string;
   language: Lang;
   completedCourseIds?: string[];
 };
@@ -39,6 +38,13 @@ const copy = {
   ar: { choose: 'اختر لغتك', chooseHelp: 'ستُعرض الدروس والأسئلة والنتائج والشهادة بهذه اللغة.', continue: 'المتابعة إلى الحساب', account: 'حساب المتدرب', accountHelp: 'أنشئ حساباً أو سجّل الدخول باستخدام بريدك الإلكتروني وكلمة مرور خاصة.', name: 'الاسم الكامل', email: 'البريد الإلكتروني', password: 'كلمة المرور', confirm: 'تأكيد كلمة المرور', create: 'إنشاء الحساب', welcome: 'مرحباً', progress: 'تدريب السلامة الخاص بك', start: 'ابدأ الدورة', resume: 'متابعة الدورة', cards: '8 شرائح تفصيلية', questions: '5 أسئلة', pass: 'النجاح من 80٪', lesson: 'العمل على ارتفاعات', next: 'الشريحة التالية', quiz: 'ابدأ التقييم', question: 'السؤال', submit: 'إرسال الإجابات', passed: 'تهانينا، لقد نجحت!', failed: 'راجع الدرس ثم حاول مرة أخرى.', score: 'درجتك', attempts: 'المحاولات المستخدمة', certificate: 'الشهادة جاهزة للتنزيل', retry: 'حاول مرة أخرى', dashboard: 'العودة إلى الدورات', profile: 'الملف الشخصي والشهادات', save: 'تغيير كلمة المرور', saved: 'تم تغيير كلمة المرور بنجاح.', signout: 'تسجيل الخروج', standard: 'مراجع OSHA', lock: 'تم استخدام ثلاث محاولات. ستُفعّل الدورة بعد 24 ساعة من آخر محاولة.' },
   ur: { choose: 'اپنی زبان منتخب کریں', chooseHelp: 'آپ کے اسباق، سوالات، نتائج اور سرٹیفکیٹ اسی زبان میں ہوں گے۔', continue: 'اکاؤنٹ کی طرف جائیں', account: 'تربیتی اکاؤنٹ', accountHelp: 'اکاؤنٹ بنائیں یا اپنے ای میل اور نجی پاس ورڈ سے سائن اِن کریں۔', name: 'پورا نام', email: 'ای میل ایڈریس', password: 'پاس ورڈ', confirm: 'پاس ورڈ کی تصدیق', create: 'اکاؤنٹ بنائیں', welcome: 'خوش آمدید', progress: 'آپ کی حفاظتی تربیت', start: 'کورس شروع کریں', resume: 'کورس جاری رکھیں', cards: '8 تفصیلی سلائیڈز', questions: '5 سوالات', pass: '80٪ کامیابی ضروری', lesson: 'بلندی پر کام', next: 'اگلی سلائیڈ', quiz: 'جائزہ شروع کریں', question: 'سوال', submit: 'جوابات جمع کریں', passed: 'مبارک ہو، آپ کامیاب ہوگئے!', failed: 'سبق کا دوبارہ جائزہ لیں اور پھر کوشش کریں۔', score: 'آپ کا اسکور', attempts: 'استعمال شدہ کوششیں', certificate: 'سرٹیفکیٹ ڈاؤن لوڈ کے لیے تیار ہے', retry: 'دوبارہ کوشش کریں', dashboard: 'کورسز پر واپس جائیں', profile: 'پروفائل اور سرٹیفکیٹس', save: 'پاس ورڈ تبدیل کریں', saved: 'پاس ورڈ کامیابی سے تبدیل ہوگیا۔', signout: 'سائن آؤٹ', standard: 'OSHA حوالہ جات', lock: 'تین کوششیں مکمل ہوگئیں۔ آخری کوشش کے 24 گھنٹے بعد کورس دوبارہ فعال ہوگا۔' },
   hi: { choose: 'अपनी भाषा चुनें', chooseHelp: 'आपके पाठ, प्रश्न, परिणाम और प्रमाणपत्र इसी भाषा में होंगे।', continue: 'खाते पर जाएँ', account: 'प्रशिक्षु खाता', accountHelp: 'खाता बनाएँ या अपने ईमेल और निजी पासवर्ड से साइन इन करें।', name: 'पूरा नाम', email: 'ईमेल पता', password: 'पासवर्ड', confirm: 'पासवर्ड की पुष्टि', create: 'खाता बनाएँ', welcome: 'स्वागत है', progress: 'आपका सुरक्षा प्रशिक्षण', start: 'पाठ्यक्रम शुरू करें', resume: 'पाठ्यक्रम जारी रखें', cards: '8 विस्तृत स्लाइड', questions: '5 प्रश्न', pass: '80% उत्तीर्ण अंक', lesson: 'ऊँचाई पर काम', next: 'अगली स्लाइड', quiz: 'मूल्यांकन शुरू करें', question: 'प्रश्न', submit: 'उत्तर जमा करें', passed: 'बधाई हो, आप उत्तीर्ण हुए!', failed: 'पाठ की समीक्षा करें और फिर प्रयास करें।', score: 'आपका अंक', attempts: 'प्रयुक्त प्रयास', certificate: 'प्रमाणपत्र डाउनलोड के लिए तैयार है', retry: 'फिर प्रयास करें', dashboard: 'पाठ्यक्रमों पर लौटें', profile: 'प्रोफ़ाइल और प्रमाणपत्र', save: 'पासवर्ड बदलें', saved: 'पासवर्ड सफलतापूर्वक बदल दिया गया।', signout: 'साइन आउट', standard: 'OSHA संदर्भ', lock: 'तीन प्रयास पूरे हो गए हैं। अंतिम प्रयास के 24 घंटे बाद पाठ्यक्रम फिर सक्रिय होगा।' },
+};
+
+const accountUi: Record<Lang, { createTab: string; signInTab: string; optionalName: string; securityNote: string; wait: string; forgot: string; sessionEnded: string }> = {
+  en: { createTab: 'Create account', signInTab: 'Sign in', optionalName: 'Optional · used on certificates', securityNote: 'Only your email and password are required. Passwords are handled by Firebase Authentication and are never written to Google Sheets.', wait: 'Please wait…', forgot: 'Forgot password?', sessionEnded: 'Your session could not be renewed. Sign in again; your selected answers remain on this device.' },
+  ar: { createTab: 'إنشاء حساب', signInTab: 'تسجيل الدخول', optionalName: 'اختياري · يُستخدم في الشهادات', securityNote: 'المطلوب فقط هو البريد الإلكتروني وكلمة المرور. تُعالج كلمات المرور بواسطة Firebase ولا تُكتب في جداول Google.', wait: 'يرجى الانتظار…', forgot: 'نسيت كلمة المرور؟', sessionEnded: 'تعذر تجديد الجلسة. سجّل الدخول مرة أخرى؛ ستبقى إجاباتك المحددة على هذا الجهاز.' },
+  ur: { createTab: 'اکاؤنٹ بنائیں', signInTab: 'سائن اِن', optionalName: 'اختیاری · سرٹیفکیٹ پر استعمال ہوگا', securityNote: 'صرف ای میل اور پاس ورڈ درکار ہیں۔ پاس ورڈ Firebase سنبھالتا ہے اور Google Sheets میں کبھی محفوظ نہیں ہوتا۔', wait: 'براہ کرم انتظار کریں…', forgot: 'پاس ورڈ بھول گئے؟', sessionEnded: 'سیشن کی تجدید نہیں ہو سکی۔ دوبارہ سائن اِن کریں؛ آپ کے منتخب جوابات اسی ڈیوائس پر رہیں گے۔' },
+  hi: { createTab: 'खाता बनाएँ', signInTab: 'साइन इन', optionalName: 'वैकल्पिक · प्रमाणपत्र पर उपयोग होगा', securityNote: 'केवल ईमेल और पासवर्ड आवश्यक हैं। पासवर्ड Firebase संभालता है और Google Sheets में कभी नहीं लिखा जाता।', wait: 'कृपया प्रतीक्षा करें…', forgot: 'पासवर्ड भूल गए?', sessionEnded: 'सत्र नवीनीकृत नहीं हो सका। फिर साइन इन करें; चुने हुए उत्तर इसी डिवाइस पर बने रहेंगे।' },
 };
 
 const course = {
@@ -131,7 +137,6 @@ export default function Home() {
   const [score, setScore] = useState(0);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [idNumber, setIdNumber] = useState('');
   const [idToken, setIdToken] = useState('');
   const [authMode, setAuthMode] = useState<'signup' | 'signin'>('signup');
   const [busy, setBusy] = useState(false);
@@ -154,6 +159,7 @@ export default function Home() {
   const data = lessons[activeCourseId] || course[lang];
   const courseTitle = activeCourse.titles[lang];
   const t = { ...copy[lang], lesson: courseTitle };
+  const accountText = accountUi[lang];
   const rtl = languages.find((item) => item.code === lang)?.rtl;
   const allAnswered = answers.every((value) => value >= 0);
   const locked = Boolean(lockoutUntil && new Date(lockoutUntil) > new Date()) && !passed;
@@ -178,6 +184,17 @@ export default function Home() {
     setIdToken(session.idToken);
   }
 
+  async function renewIdToken() {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) throw new Error(accountText.sessionEnded);
+    const stored = JSON.parse(raw) as StoredAuth;
+    if (!stored.refreshToken) throw new Error(accountText.sessionEnded);
+    const session = await refreshSession(stored.refreshToken);
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ ...stored, refreshToken: session.refreshToken }));
+    setIdToken(session.idToken);
+    return session.idToken;
+  }
+
   useEffect(() => {
     const raw = localStorage.getItem(AUTH_STORAGE_KEY);
     if (!raw) return;
@@ -195,7 +212,6 @@ export default function Home() {
       persistSession(session, {
         email: stored.email,
         name: stored.name,
-        idNumber: stored.idNumber,
         language: stored.language,
         completedCourseIds: stored.completedCourseIds || [],
       });
@@ -203,13 +219,20 @@ export default function Home() {
       setSelected(stored.language);
       setName(stored.name);
       setEmail(stored.email);
-      setIdNumber(stored.idNumber);
       setCompletedCourseIds(stored.completedCourseIds || []);
       setView('dashboard');
     }).catch(() => {
       localStorage.removeItem(AUTH_STORAGE_KEY);
     }).finally(() => setBusy(false));
   }, []);
+
+  useEffect(() => {
+    if (!idToken) return;
+    const timer = window.setInterval(() => { renewIdToken().catch(() => undefined); }, 45 * 60 * 1000);
+    const refreshWhenVisible = () => { if (document.visibilityState === 'visible') renewIdToken().catch(() => undefined); };
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', refreshWhenVisible); };
+  }, [idToken]);
 
   useEffect(() => {
     if ((view !== 'profile' && view !== 'dashboard') || !idToken) return;
@@ -265,7 +288,6 @@ export default function Home() {
       persistSession(session, {
         email: session.email || accountEmail,
         name: resolvedName,
-        idNumber,
         language: lang,
         completedCourseIds,
       });
@@ -291,9 +313,10 @@ export default function Home() {
     setBusy(true);
     setError('');
     try {
+      const freshIdToken = await renewIdToken();
       const record = await submitAttempt({
-        idToken, courseId: activeCourse.id, courseTitle, learnerName: name,
-        idNumber, language: lang, answers, scorePercent: result, correctAnswers: correct,
+        idToken: freshIdToken, courseId: activeCourse.id, courseTitle, learnerName: name,
+        language: lang, answers, scorePercent: result, correctAnswers: correct,
         totalQuestions: data.quiz.length, startedAt: new Date().toISOString(),
         oshaReferences: activeCourse.references,
       });
@@ -313,7 +336,14 @@ export default function Home() {
       }
       setView('result');
     } catch (problem) {
-      setError(problem instanceof Error ? problem.message : 'Unable to record the assessment.');
+      const message = problem instanceof Error ? problem.message : 'Unable to record the assessment.';
+      if (/authentication|required|session|token/i.test(message)) {
+        setAuthMode('signin');
+        setView('account');
+        setError(accountText.sessionEnded);
+      } else {
+        setError(message);
+      }
     } finally {
       setBusy(false);
     }
@@ -333,8 +363,9 @@ export default function Home() {
     if (first.length < 8 || first !== second) { setPasswordMessage('Passwords must match and contain at least 8 characters.'); return; }
     setBusy(true);
     try {
-      const session = await changePassword(idToken, first);
-      persistSession(session, { email, name, idNumber, language: lang, completedCourseIds });
+      const freshIdToken = await renewIdToken();
+      const session = await changePassword(freshIdToken, first);
+      persistSession(session, { email, name, language: lang, completedCourseIds });
       setPasswordMessage(t.saved);
       event.currentTarget.reset();
     } catch (problem) {
@@ -371,7 +402,7 @@ export default function Home() {
       )}
 
       {view === 'account' && (
-        <section className="narrow"><button type="button" onClick={() => setView('language')} className="back-link">← {copy[lang].choose}</button><div className="panel mt-4"><p className="step">Step 2 of 3</p><h1 className="panel-title">{t.account}</h1><p className="panel-copy">{t.accountHelp}</p><div className="mt-5 grid grid-cols-2 gap-2 rounded-xl bg-[#eef4f0] p-1"><button type="button" onClick={() => { setAuthMode('signup'); setError(''); }} className={authMode === 'signup' ? 'rounded-lg bg-white p-3 font-bold shadow-sm' : 'p-3 font-bold text-[#5f7066]'}>Create account</button><button type="button" onClick={() => { setAuthMode('signin'); setError(''); }} className={authMode === 'signin' ? 'rounded-lg bg-white p-3 font-bold shadow-sm' : 'p-3 font-bold text-[#5f7066]'}>Sign in</button></div><form onSubmit={authenticate} className="mt-6 space-y-4">{authMode === 'signup' && <><label className="field"><span>{t.name}</span><input name="name" required autoComplete="name" /></label><label className="field"><span>ID / Iqama number</span><input name="idNumber" required value={idNumber} onChange={(event) => setIdNumber(event.target.value)} autoComplete="off" /></label></>}<label className="field"><span>{t.email}</span><input name="email" type="email" required autoComplete="email" /></label><label className="field"><span>{t.password}</span><input name="password" type="password" required minLength={8} autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'} /></label>{authMode === 'signup' && <label className="field"><span>{t.confirm}</span><input name="confirm" type="password" required minLength={8} autoComplete="new-password" /></label>}<p className="text-xs text-[#6d7c73]">Passwords are handled only by Firebase Authentication and are never written to Google Sheets.</p>{error && <p className="rounded-xl bg-[#fff0ec] p-3 text-sm font-bold text-[#9a302b]">{error}</p>}<button disabled={busy} className="primary-button">{busy ? 'Please wait…' : authMode === 'signup' ? t.create : 'Sign in'}</button>{authMode === 'signin' && <button type="button" className="w-full text-sm font-bold text-[#087b41]" onClick={async () => { const accountEmail = (document.querySelector('input[name=email]') as HTMLInputElement)?.value; if (!accountEmail) { setError('Enter your email address first.'); return; } try { await sendPasswordReset(accountEmail); setError('Password reset email sent.'); } catch (problem) { setError(problem instanceof Error ? problem.message : 'Reset failed.'); } }}>Forgot password?</button>}</form></div></section>
+        <section className="narrow"><button type="button" onClick={() => setView('language')} className="back-link">← {copy[lang].choose}</button><div className="panel mt-4"><p className="step">Step 2 of 3</p><h1 className="panel-title">{t.account}</h1><p className="panel-copy">{t.accountHelp}</p><div className="mt-5 grid grid-cols-2 gap-2 rounded-xl bg-[#eef4f0] p-1"><button type="button" onClick={() => { setAuthMode('signup'); setError(''); }} className={authMode === 'signup' ? 'rounded-lg bg-white p-3 font-bold shadow-sm' : 'p-3 font-bold text-[#5f7066]'}>{accountText.createTab}</button><button type="button" onClick={() => { setAuthMode('signin'); setError(''); }} className={authMode === 'signin' ? 'rounded-lg bg-white p-3 font-bold shadow-sm' : 'p-3 font-bold text-[#5f7066]'}>{accountText.signInTab}</button></div><form onSubmit={authenticate} className="mt-6 space-y-4">{authMode === 'signup' && <label className="field"><span>{t.name}</span><input name="name" autoComplete="name" placeholder={accountText.optionalName} /></label>}<label className="field"><span>{t.email}</span><input name="email" type="email" required autoComplete="email" /></label><label className="field"><span>{t.password}</span><input name="password" type="password" required minLength={8} autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'} /></label>{authMode === 'signup' && <label className="field"><span>{t.confirm}</span><input name="confirm" type="password" required minLength={8} autoComplete="new-password" /></label>}<p className="text-xs text-[#6d7c73]">{accountText.securityNote}</p>{error && <p className="rounded-xl bg-[#fff0ec] p-3 text-sm font-bold text-[#9a302b]">{error}</p>}<button disabled={busy} className="primary-button">{busy ? accountText.wait : authMode === 'signup' ? t.create : accountText.signInTab}</button>{authMode === 'signin' && <button type="button" className="w-full text-sm font-bold text-[#087b41]" onClick={async () => { const accountEmail = (document.querySelector('input[name=email]') as HTMLInputElement)?.value; if (!accountEmail) { setError('Enter your email address first.'); return; } try { await sendPasswordReset(accountEmail); setError('Password reset email sent.'); } catch (problem) { setError(problem instanceof Error ? problem.message : 'Reset failed.'); } }}>{accountText.forgot}</button>}</form></div></section>
       )}
 
       {view === 'dashboard' && (
@@ -388,10 +419,9 @@ export default function Home() {
               <div className="flex flex-wrap gap-2"><span className="tag">{activeCourse.standard}</span><span className="tag">{completedCourseIds.includes(activeCourse.id) ? 'Completed · Review available' : 'Current course'}</span></div>
               <h2 className="mt-5 text-2xl font-black">{courseTitle}</h2>
               <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[#596b61]"><span>{t.cards}</span><span>{t.questions}</span><span>{t.pass}</span></div>
-              {!idNumber && <label className="field mt-5"><span>ID / Iqama number for the certificate</span><input value={idNumber} onChange={(event) => setIdNumber(event.target.value)} required /></label>}
               {locked && <div className="mt-5 rounded-xl bg-[#fff3dd] p-4 text-sm font-semibold text-[#7a5011]">{t.lock}<br/>{lockoutUntil}</div>}
               {!activeCourse.contentReady && <p className="mt-5 rounded-xl bg-[#eef4f0] p-4 text-sm font-semibold text-[#52665a]">This OSHA module is listed in the sequence and its reviewed multilingual lesson is being prepared.</p>}
-              <button type="button" disabled={locked || !idNumber || !activeCourse.contentReady} onClick={() => { setSlide(0); setView('lesson'); }} className="primary-button mt-6 sm:w-auto sm:px-8">{completedCourseIds.includes(activeCourse.id) ? 'Review course' : attempts ? t.resume : t.start}</button>
+              <button type="button" disabled={locked || !activeCourse.contentReady} onClick={() => { setSlide(0); setView('lesson'); }} className="primary-button mt-6 sm:w-auto sm:px-8">{completedCourseIds.includes(activeCourse.id) ? 'Review course' : attempts ? t.resume : t.start}</button>
             </div>
           </article>
           <h2 className="mt-10 text-lg font-black">Construction safety course sequence</h2>
@@ -416,7 +446,7 @@ export default function Home() {
       )}
 
       {view === 'quiz' && (
-        <section className="narrow-wide"><button type="button" className="back-link" onClick={() => setView('lesson')}>← {t.lesson}</button><div className="mt-5"><p className="step">Assessment · Attempt {attempts + 1} of 3</p><h1 className="mt-2 text-3xl font-black">{t.questions} · {t.pass}</h1></div><div className="mt-7 space-y-5">{data.quiz.map((item, index) => <fieldset key={item.q} className="question-card"><legend className="font-extrabold"><span className="text-[#12824a]">{t.question} {index + 1}.</span> {item.q}</legend><div className="mt-4 space-y-2">{item.a.map((option, optionIndex) => <label key={option} className={`option ${answers[index] === optionIndex ? 'chosen' : ''}`}><input type="radio" name={`q-${index}`} checked={answers[index] === optionIndex} onChange={() => setAnswers((current) => current.map((value, answerIndex) => answerIndex === index ? optionIndex : value))} /><span><b>{String.fromCharCode(65 + optionIndex)}.</b> {option}</span></label>)}</div></fieldset>)}</div>{error && <p className="mt-4 rounded-xl bg-[#fff0ec] p-3 text-sm font-bold text-[#9a302b]">{error}</p>}<button type="button" disabled={!allAnswered || busy} onClick={gradeQuiz} className="primary-button mt-6">{busy ? 'Recording…' : t.submit}</button></section>
+        <section className="narrow-wide"><button type="button" className="back-link" onClick={() => setView('lesson')}>← {t.lesson}</button><div className="mt-5"><p className="step">Assessment · Attempt {attempts + 1} of 3</p><h1 className="mt-2 text-3xl font-black">{t.questions} · {t.pass}</h1></div><div className="mt-7 space-y-5">{data.quiz.map((item, index) => <fieldset key={item.q} className="question-card"><legend className="font-extrabold"><span className="text-[#12824a]">{t.question} {index + 1}.</span> {item.q}</legend><div className="mt-4 space-y-2">{item.a.map((option, optionIndex) => <label key={option} className={`option ${answers[index] === optionIndex ? 'chosen' : ''}`}><input type="radio" name={`q-${index}`} checked={answers[index] === optionIndex} onChange={() => setAnswers((current) => current.map((value, answerIndex) => answerIndex === index ? optionIndex : value))} /><b className="option-letter" dir="ltr">{String.fromCharCode(65 + optionIndex)}.</b><span className="option-text">{option}</span></label>)}</div></fieldset>)}</div>{error && <p className="mt-4 rounded-xl bg-[#fff0ec] p-3 text-sm font-bold text-[#9a302b]">{error}</p>}<button type="button" disabled={!allAnswered || busy} onClick={gradeQuiz} className="primary-button mt-6">{busy ? 'Recording…' : t.submit}</button></section>
       )}
 
       {view === 'result' && (

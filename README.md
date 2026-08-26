@@ -42,7 +42,7 @@ The backend validates every Firebase ID token, enforces attempts and lockouts, a
 - Certificate folder ID: `1LUG-fYby0pfIZtDy1SEQwH2unbogP2lE`
 - Slides template ID: `1p6GiXGadLPCFtxieBygKU5UKafUxnQGQIccpT1F-kaI`
 
-The certificate folder is currently link-readable. Because certificates contain names and ID/Iqama numbers, change its sharing policy if public access is not acceptable; doing so will require an authenticated download proxy.
+The certificate folder is currently link-readable. Certificates contain learner names and course-completion details, so change its sharing policy if public access is not acceptable; doing so will require an authenticated download proxy.
 
 ## Local development
 
@@ -56,3 +56,4 @@ For a production export:
 ```bash
 pnpm build
 ```
+
