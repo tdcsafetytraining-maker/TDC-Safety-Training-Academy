@@ -40,11 +40,11 @@ const copy = {
   hi: { choose: 'अपनी भाषा चुनें', chooseHelp: 'आपके पाठ, प्रश्न, परिणाम और प्रमाणपत्र इसी भाषा में होंगे।', continue: 'खाते पर जाएँ', account: 'प्रशिक्षु खाता', accountHelp: 'खाता बनाएँ या अपने ईमेल और निजी पासवर्ड से साइन इन करें।', name: 'पूरा नाम', email: 'ईमेल पता', password: 'पासवर्ड', confirm: 'पासवर्ड की पुष्टि', create: 'खाता बनाएँ', welcome: 'स्वागत है', progress: 'आपका सुरक्षा प्रशिक्षण', start: 'पाठ्यक्रम शुरू करें', resume: 'पाठ्यक्रम जारी रखें', cards: '8 विस्तृत स्लाइड', questions: '5 प्रश्न', pass: '80% उत्तीर्ण अंक', lesson: 'ऊँचाई पर काम', next: 'अगली स्लाइड', quiz: 'मूल्यांकन शुरू करें', question: 'प्रश्न', submit: 'उत्तर जमा करें', passed: 'बधाई हो, आप उत्तीर्ण हुए!', failed: 'पाठ की समीक्षा करें और फिर प्रयास करें।', score: 'आपका अंक', attempts: 'प्रयुक्त प्रयास', certificate: 'प्रमाणपत्र डाउनलोड के लिए तैयार है', download: 'प्रमाणपत्र PDF डाउनलोड करें', home: 'होम', retry: 'फिर प्रयास करें', dashboard: 'पाठ्यक्रमों पर लौटें', profile: 'प्रोफ़ाइल और प्रमाणपत्र', save: 'पासवर्ड बदलें', saved: 'पासवर्ड सफलतापूर्वक बदल दिया गया।', signout: 'साइन आउट', standard: 'OSHA संदर्भ', lock: 'तीन प्रयास पूरे हो गए हैं। अंतिम प्रयास के 24 घंटे बाद पाठ्यक्रम फिर सक्रिय होगा।' },
 };
 
-const accountUi: Record<Lang, { createTab: string; signInTab: string; optionalName: string; securityNote: string; wait: string; forgot: string; sessionEnded: string; showPassword: string; hidePassword: string; signupSuccess: string }> = {
-  en: { createTab: 'Create account', signInTab: 'Sign in', optionalName: 'Optional · used on certificates', securityNote: 'Only your email and password are required. Passwords are handled by Firebase Authentication and are never written to Google Sheets.', wait: 'Please wait…', forgot: 'Forgot password?', sessionEnded: 'Your session could not be renewed. Sign in again; your selected answers remain on this device.', showPassword: 'Show password', hidePassword: 'Hide password', signupSuccess: 'Account created successfully. Please sign in with your email and password.' },
-  ar: { createTab: 'إنشاء حساب', signInTab: 'تسجيل الدخول', optionalName: 'اختياري · يُستخدم في الشهادات', securityNote: 'المطلوب فقط هو البريد الإلكتروني وكلمة المرور. تُعالج كلمات المرور بواسطة Firebase ولا تُكتب في جداول Google.', wait: 'يرجى الانتظار…', forgot: 'نسيت كلمة المرور؟', sessionEnded: 'تعذر تجديد الجلسة. سجّل الدخول مرة أخرى؛ ستبقى إجاباتك المحددة على هذا الجهاز.', showPassword: 'إظهار كلمة المرور', hidePassword: 'إخفاء كلمة المرور', signupSuccess: 'تم إنشاء الحساب بنجاح. يرجى تسجيل الدخول باستخدام بريدك الإلكتروني وكلمة المرور.' },
-  ur: { createTab: 'اکاؤنٹ بنائیں', signInTab: 'سائن اِن', optionalName: 'اختیاری · سرٹیفکیٹ پر استعمال ہوگا', securityNote: 'صرف ای میل اور پاس ورڈ درکار ہیں۔ پاس ورڈ Firebase سنبھالتا ہے اور Google Sheets میں کبھی محفوظ نہیں ہوتا۔', wait: 'براہ کرم انتظار کریں…', forgot: 'پاس ورڈ بھول گئے؟', sessionEnded: 'سیشن کی تجدید نہیں ہو سکی۔ دوبارہ سائن اِن کریں؛ آپ کے منتخب جوابات اسی ڈیوائس پر رہیں گے۔', showPassword: 'پاس ورڈ دکھائیں', hidePassword: 'پاس ورڈ چھپائیں', signupSuccess: 'اکاؤنٹ کامیابی سے بن گیا۔ براہ کرم اپنے ای میل اور پاس ورڈ سے سائن اِن کریں۔' },
-  hi: { createTab: 'खाता बनाएँ', signInTab: 'साइन इन', optionalName: 'वैकल्पिक · प्रमाणपत्र पर उपयोग होगा', securityNote: 'केवल ईमेल और पासवर्ड आवश्यक हैं। पासवर्ड Firebase संभालता है और Google Sheets में कभी नहीं लिखा जाता।', wait: 'कृपया प्रतीक्षा करें…', forgot: 'पासवर्ड भूल गए?', sessionEnded: 'सत्र नवीनीकृत नहीं हो सका। फिर साइन इन करें; चुने हुए उत्तर इसी डिवाइस पर बने रहेंगे।', showPassword: 'पासवर्ड दिखाएँ', hidePassword: 'पासवर्ड छिपाएँ', signupSuccess: 'खाता सफलतापूर्वक बन गया। कृपया अपने ईमेल और पासवर्ड से साइन इन करें।' },
+const accountUi: Record<Lang, { createTab: string; signInTab: string; requiredName: string; nameRequired: string; securityNote: string; wait: string; forgot: string; sessionEnded: string; showPassword: string; hidePassword: string; signupSuccess: string }> = {
+  en: { createTab: 'Create account', signInTab: 'Sign in', requiredName: 'Required · printed on certificates', nameRequired: 'Enter your full name. It will appear on your certificates.', securityNote: 'Your full name, email, and password are required to create an account. Passwords are handled by Firebase Authentication and are never written to Google Sheets.', wait: 'Please wait…', forgot: 'Forgot password?', sessionEnded: 'Your session could not be renewed. Sign in again; your selected answers remain on this device.', showPassword: 'Show password', hidePassword: 'Hide password', signupSuccess: 'Account created successfully. Please sign in with your email and password.' },
+  ar: { createTab: 'إنشاء حساب', signInTab: 'تسجيل الدخول', requiredName: 'مطلوب · يُطبع على الشهادات', nameRequired: 'أدخل اسمك الكامل. سيظهر على شهاداتك.', securityNote: 'الاسم الكامل والبريد الإلكتروني وكلمة المرور مطلوبة لإنشاء حساب. تُعالج كلمات المرور بواسطة Firebase ولا تُكتب في جداول Google.', wait: 'يرجى الانتظار…', forgot: 'نسيت كلمة المرور؟', sessionEnded: 'تعذر تجديد الجلسة. سجّل الدخول مرة أخرى؛ ستبقى إجاباتك المحددة على هذا الجهاز.', showPassword: 'إظهار كلمة المرور', hidePassword: 'إخفاء كلمة المرور', signupSuccess: 'تم إنشاء الحساب بنجاح. يرجى تسجيل الدخول باستخدام بريدك الإلكتروني وكلمة المرور.' },
+  ur: { createTab: 'اکاؤنٹ بنائیں', signInTab: 'سائن اِن', requiredName: 'ضروری · سرٹیفکیٹ پر درج ہوگا', nameRequired: 'اپنا پورا نام درج کریں۔ یہ آپ کے سرٹیفکیٹس پر ظاہر ہوگا۔', securityNote: 'اکاؤنٹ بنانے کے لیے پورا نام، ای میل اور پاس ورڈ درکار ہیں۔ پاس ورڈ Firebase سنبھالتا ہے اور Google Sheets میں کبھی محفوظ نہیں ہوتا۔', wait: 'براہ کرم انتظار کریں…', forgot: 'پاس ورڈ بھول گئے؟', sessionEnded: 'سیشن کی تجدید نہیں ہو سکی۔ دوبارہ سائن اِن کریں؛ آپ کے منتخب جوابات اسی ڈیوائس پر رہیں گے۔', showPassword: 'پاس ورڈ دکھائیں', hidePassword: 'پاس ورڈ چھپائیں', signupSuccess: 'اکاؤنٹ کامیابی سے بن گیا۔ براہ کرم اپنے ای میل اور پاس ورڈ سے سائن اِن کریں۔' },
+  hi: { createTab: 'खाता बनाएँ', signInTab: 'साइन इन', requiredName: 'आवश्यक · प्रमाणपत्र पर मुद्रित होगा', nameRequired: 'अपना पूरा नाम दर्ज करें। यह आपके प्रमाणपत्रों पर दिखाई देगा।', securityNote: 'खाता बनाने के लिए पूरा नाम, ईमेल और पासवर्ड आवश्यक हैं। पासवर्ड Firebase संभालता है और Google Sheets में कभी नहीं लिखा जाता।', wait: 'कृपया प्रतीक्षा करें…', forgot: 'पासवर्ड भूल गए?', sessionEnded: 'सत्र नवीनीकृत नहीं हो सका। फिर साइन इन करें; चुने हुए उत्तर इसी डिवाइस पर बने रहेंगे।', showPassword: 'पासवर्ड दिखाएँ', hidePassword: 'पासवर्ड छिपाएँ', signupSuccess: 'खाता सफलतापूर्वक बन गया। कृपया अपने ईमेल और पासवर्ड से साइन इन करें।' },
 };
 
 const course = {
@@ -284,6 +284,10 @@ export default function Home() {
     const accountEmail = String(form.get('email') || '').trim();
     const first = String(form.get('password') || '');
     const second = String(form.get('confirm') || '');
+    if (authMode === 'signup' && !fullName) {
+      setError(accountText.nameRequired);
+      return;
+    }
     if (first.length < 8 || (authMode === 'signup' && first !== second)) {
       setError('Passwords must match and contain at least 8 characters.');
       return;
@@ -294,7 +298,7 @@ export default function Home() {
     try {
       if (authMode === 'signup') {
         const session = await signUp(accountEmail, first, fullName);
-        const resolvedName = fullName || session.displayName || accountEmail.split('@')[0];
+        const resolvedName = fullName;
         try { await registerLearner(session.idToken, resolvedName, lang); } catch { /* Registration is retried after sign-in. */ }
         authForm.reset();
         const emailInput = authForm.elements.namedItem('email') as HTMLInputElement | null;
@@ -434,7 +438,7 @@ export default function Home() {
               <button type="button" dir={rtl ? 'rtl' : 'ltr'} onClick={() => { setAuthMode('signup'); setShowPassword(false); setError(''); setAuthNotice(''); }} className={authMode === 'signup' ? 'rounded-lg bg-white p-3 font-bold shadow-sm' : 'p-3 font-bold text-[#5f7066]'}>{accountText.createTab}</button>
             </div>
             <form onSubmit={authenticate} className="mt-6 space-y-4">
-              {authMode === 'signup' && <label className="field"><span>{t.name}</span><input name="name" autoComplete="name" placeholder={accountText.optionalName} /></label>}
+              {authMode === 'signup' && <label className="field"><span>{t.name}</span><input name="name" autoComplete="name" placeholder={accountText.requiredName} required /></label>}
               <label className="field"><span>{t.email}</span><input name="email" type="email" required autoComplete="email" /></label>
               <label className="field"><span>{t.password}</span><input name="password" type={showPassword ? 'text' : 'password'} required minLength={8} autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'} /></label>
               {authMode === 'signup' && <label className="field"><span>{t.confirm}</span><input name="confirm" type={showPassword ? 'text' : 'password'} required minLength={8} autoComplete="new-password" /></label>}
