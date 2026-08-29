@@ -5,13 +5,23 @@ import ts from 'typescript';
 const root = process.cwd();
 const showDetails = process.argv.includes('--details');
 
+const moduleCache = new Map();
 function loadTypeScript(relativePath) {
+  const normalizedPath = relativePath.replaceAll('\\', '/');
+  if (moduleCache.has(normalizedPath)) return moduleCache.get(normalizedPath);
   const source = fs.readFileSync(path.join(root, relativePath), 'utf8');
   const output = ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText;
   const module = { exports: {} };
-  new Function('exports', 'module', 'require', output)(module.exports, module, () => ({}));
+  moduleCache.set(normalizedPath, module.exports);
+  const localRequire = (specifier) => {
+    if (!specifier.startsWith('.')) return {};
+    const resolved = path.posix.normalize(path.posix.join(path.posix.dirname(normalizedPath), `${specifier}.ts`));
+    return loadTypeScript(resolved);
+  };
+  new Function('exports', 'module', 'require', output)(module.exports, module, localRequire);
+  moduleCache.set(normalizedPath, module.exports);
   return module.exports;
 }
 
@@ -57,6 +67,10 @@ const backendSource = fs.readFileSync(path.join(root, 'apps-script/Code.gs'), 'u
 const backendKeys = Object.fromEntries([...backendSource.matchAll(/'([A-Z]{3,4}-\d{3})':\s*\[([^\]]+)\]/g)].map((match) => [match[1], match[2].split(',').map((value) => Number(value.trim()))]));
 const titleMapSource = backendSource.slice(backendSource.indexOf('const ENGLISH_COURSE_TITLES = {'), backendSource.indexOf('\n};', backendSource.indexOf('const ENGLISH_COURSE_TITLES = {')));
 const backendEnglishTitles = Object.fromEntries([...titleMapSource.matchAll(/'([A-Z]{3,4}-\d{3})':\s*'([^']+)'/g)].map((match) => [match[1], match[2]]));
+const seenQuestions = new Map();
+const seenAnswerSets = new Map();
+const genericQuestionFragments = ['what must control the work', 'who verifies changing conditions', 'may a site rule be more protective'];
+const normalize = (value) => String(value).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 
 for (const [courseId, localized] of Object.entries(courses)) {
   const catalogTitle = modules.catalog.courseCatalog.find((course) => course.id === courseId)?.titles.en;
@@ -69,8 +83,21 @@ for (const [courseId, localized] of Object.entries(courses)) {
     lesson.quiz.forEach((question, index) => {
       if (question.a.length !== 4) throw new Error(`${courseId} ${language} question ${index + 1} does not have four options.`);
       if (!Number.isInteger(question.correct) || question.correct < 0 || question.correct >= question.a.length) throw new Error(`${courseId} ${language} question ${index + 1} has invalid answer index ${question.correct}.`);
+      if (question.a.some(Boolean) && new Set(question.a.map(normalize)).size !== question.a.length) throw new Error(`${courseId} ${language} question ${index + 1} contains duplicate answer choices.`);
     });
   }
+  localized.en.quiz.forEach((question, index) => {
+    if (!question.q) return;
+    const normalizedQuestion = normalize(question.q);
+    if (genericQuestionFragments.some((fragment) => normalizedQuestion.includes(fragment))) throw new Error(`${courseId} question ${index + 1} still uses a generic shared assessment prompt.`);
+    const previousQuestion = seenQuestions.get(normalizedQuestion);
+    if (previousQuestion && previousQuestion !== courseId) throw new Error(`${courseId} duplicates a question used by ${previousQuestion}: ${question.q}`);
+    seenQuestions.set(normalizedQuestion, courseId);
+    const normalizedAnswers = question.a.map(normalize).sort().join('|');
+    const previousAnswers = seenAnswerSets.get(normalizedAnswers);
+    if (previousAnswers && previousAnswers !== courseId) throw new Error(`${courseId} duplicates a complete answer set used by ${previousAnswers}: ${question.q}`);
+    seenAnswerSets.set(normalizedAnswers, courseId);
+  });
   const backendKey = backendKeys[courseId];
   if (!backendKey) throw new Error(`${courseId} is missing from the Apps Script grader.`);
   if (backendKey.join() !== englishKey.join()) throw new Error(`${courseId} website key ${englishKey} differs from backend key ${backendKey}.`);
