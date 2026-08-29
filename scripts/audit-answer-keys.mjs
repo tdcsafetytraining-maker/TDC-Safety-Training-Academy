@@ -55,8 +55,12 @@ const courses = {
 
 const backendSource = fs.readFileSync(path.join(root, 'apps-script/Code.gs'), 'utf8');
 const backendKeys = Object.fromEntries([...backendSource.matchAll(/'([A-Z]{3,4}-\d{3})':\s*\[([^\]]+)\]/g)].map((match) => [match[1], match[2].split(',').map((value) => Number(value.trim()))]));
+const titleMapSource = backendSource.slice(backendSource.indexOf('const ENGLISH_COURSE_TITLES = {'), backendSource.indexOf('\n};', backendSource.indexOf('const ENGLISH_COURSE_TITLES = {')));
+const backendEnglishTitles = Object.fromEntries([...titleMapSource.matchAll(/'([A-Z]{3,4}-\d{3})':\s*'([^']+)'/g)].map((match) => [match[1], match[2]]));
 
 for (const [courseId, localized] of Object.entries(courses)) {
+  const catalogTitle = modules.catalog.courseCatalog.find((course) => course.id === courseId)?.titles.en;
+  if (!catalogTitle || backendEnglishTitles[courseId] !== catalogTitle) throw new Error(`${courseId} certificate title does not match the English course catalog title.`);
   const englishKey = localized.en.quiz.map((question) => question.correct);
   if (englishKey.length !== 5) throw new Error(`${courseId} has ${englishKey.length} questions; expected 5.`);
   for (const [language, lesson] of Object.entries(localized)) {
