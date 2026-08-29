@@ -9,6 +9,26 @@ const SETTINGS = {
   courseOrder: ['WAH-001', 'CSP-002', 'SCA-003', 'FOP-004', 'HEM-005', 'MMI-006', 'RIG-007', 'SIG-008', 'FIR-009', 'HSK-010', 'EXC-011', 'ELC-012', 'LOTO-013', 'PPE-014', 'HPT-015', 'HAZ-016', 'EMR-017'],
 };
 
+const ENGLISH_COURSE_TITLES = {
+  'WAH-001': 'Fall Protection & Working at Height',
+  'CSP-002': 'Confined Spaces in Construction',
+  'SCA-003': 'Scaffolding Safety',
+  'FOP-004': 'Falling-Object Prevention',
+  'HEM-005': 'Heavy Equipment & Mobile Plant',
+  'MMI-006': 'Man–Machine Interaction & Struck-By Hazards',
+  'RIG-007': 'Lifting & Rigging',
+  'SIG-008': 'Crane Signal Person & Flagman',
+  'FIR-009': 'Fire Prevention & Fire Watch',
+  'HSK-010': 'Housekeeping & FOD Prevention',
+  'EXC-011': 'Excavation & Trenching',
+  'ELC-012': 'Electrical Safety',
+  'LOTO-013': 'Lockout/Tagout for Construction',
+  'PPE-014': 'Personal Protective Equipment',
+  'HPT-015': 'Hand & Power Tool Safety',
+  'HAZ-016': 'Hazard Communication',
+  'EMR-017': 'Emergency Response',
+};
+
 function doGet() {
   return json_({ ok: true, data: { service: 'TDC HSE Training Records', status: 'ready' } });
 }
@@ -145,11 +165,12 @@ function completeCourse_(identity, result) {
 
   try {
     const presentation = SlidesApp.openById(workingCopy.getId());
+    const certificateCourseTitle = certificateCourseTitle_(result.courseId, result.courseTitle, result.language);
     const replacements = {
       '{{TRAINEE_NAME}}': result.learnerName,
       '{{ID_NUMBER}}': '',
       '{{SCORE_PERCENT}}': String(result.score),
-      '{{COURSE_TITLE}}': result.courseTitle,
+      '{{COURSE_TITLE}}': certificateCourseTitle,
       '{{COMPLETION_DATE}}': Utilities.formatDate(result.completedAt, SETTINGS.timeZone, 'dd-MM-yyyy'),
       '{{CERTIFICATE_ID}}': certificateId,
       '{{SIGNATORY_TITLE}}': PropertiesService.getScriptProperties().getProperty('SIGNATORY_TITLE') || 'HSE Manager',
@@ -185,6 +206,15 @@ function completeCourse_(identity, result) {
   } finally {
     workingCopy.setTrashed(true);
   }
+}
+
+function certificateCourseTitle_(courseId, translatedTitle, language) {
+  const englishTitle = ENGLISH_COURSE_TITLES[courseId];
+  if (!englishTitle) throw new Error('Missing English certificate title for course ' + courseId + '.');
+  const localized = clean_(translatedTitle, 160);
+  return language !== 'en' && localized && localized !== englishTitle
+    ? englishTitle + '\n' + localized
+    : englishTitle;
 }
 
 function getProfile_(identity) {
