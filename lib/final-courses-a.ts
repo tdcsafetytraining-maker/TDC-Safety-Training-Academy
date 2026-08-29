@@ -5,7 +5,7 @@ const make=(refs:string[],correct:number[],packs:Record<CourseLanguage,Pack>):Re
 const q=(q:string,a:string[])=>({q,a});
 
 export const riggingCourse=make(
-['1926.251(a)(1),(6)','1926.251(a)(2)','1926.251(a)(4)','1926.251(b)–(e)','1926.251(c)(4)','1926.251(c)(6)–(11)','1926.251(e)(6)–(7)','1926.251(a); 1926.1425'],[1,2,3,0,2],{
+['1926.251(a)(1),(6)','1926.251(a)(2)','1926.251(a)(4)','1926.251(b)–(e)','1926.251(c)(4)','1926.251(c)(6)–(11)','1926.251(e)(6)–(7)','1926.251(a); 1926.1425'],[1,2,2,3,2],{
 en:{titles:['Inspect every shift','Read the tag and rated load','Proof-test custom accessories','Choose the hitch and angle','Reject damaged wire rope','Control the suspended load','Protect synthetic slings','Lift only when the plan is safe'],texts:[
 'Inspect rigging before use each shift and as conditions require. A competent person designated by the employer inspects each sling, fastening and attachment daily. Remove any damaged or defective item immediately; color coding alone is not an inspection.',
 'Use only rigging with permanent, legible manufacturer identification showing safe working load. Never exceed it. Capacity changes with sling type, hitch and angle; use the manufacturer chart rather than guessing. A missing tag means the sling is out of service.',
