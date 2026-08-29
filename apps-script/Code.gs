@@ -254,9 +254,9 @@ function gradeAnswers_(courseId, answers) {
     'ELC-012': [1, 2, 0, 3, 1],
     'LOTO-013': [1, 2, 0, 3, 1],
     'PPE-014': [1, 2, 3, 0, 1],
-    'HPT-015': [2, 0, 3, 1, 2],
-    'HAZ-016': [2, 0, 3, 1, 2],
-    'EMR-017': [2, 0, 3, 1, 2],
+    'HPT-015': [2, 2, 3, 1, 2],
+    'HAZ-016': [2, 2, 3, 1, 2],
+    'EMR-017': [2, 2, 3, 1, 2],
   };
   const key = keys[courseId];
   if (!key) throw new Error('No approved answer key exists for this course.');
