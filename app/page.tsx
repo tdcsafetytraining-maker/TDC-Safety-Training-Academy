@@ -33,6 +33,38 @@ const languages: { code: Lang; name: string; local: string; rtl: boolean }[] = [
   { code: 'hi', name: 'Hindi', local: 'हिन्दी', rtl: false },
 ];
 
+const lessonUi: Record<Lang, { focus: string; points: string; figures: string; reveal: string; takeaway: string; listen: string; stop: string; previous: string; slide: string }> = {
+  en: { focus: 'Safety focus', points: 'What you need to know', figures: 'Key figures', reveal: 'Tap to reveal the key takeaway', takeaway: 'Remember this', listen: 'Listen', stop: 'Stop audio', previous: 'Previous', slide: 'Slide' },
+  ar: { focus: 'محور السلامة', points: 'ما يجب أن تعرفه', figures: 'الأرقام المهمة', reveal: 'اضغط لإظهار الخلاصة المهمة', takeaway: 'تذكر هذا', listen: 'استمع', stop: 'إيقاف الصوت', previous: 'السابق', slide: 'الشريحة' },
+  ur: { focus: 'حفاظتی توجہ', points: 'آپ کو کیا جاننا ہے', figures: 'اہم اعداد', reveal: 'اہم خلاصہ دیکھنے کے لیے دبائیں', takeaway: 'یہ یاد رکھیں', listen: 'سنیں', stop: 'آواز بند کریں', previous: 'پچھلی', slide: 'سلائیڈ' },
+  hi: { focus: 'सुरक्षा विषय', points: 'आपको क्या जानना है', figures: 'मुख्य आँकड़े', reveal: 'मुख्य बात देखने के लिए टैप करें', takeaway: 'इसे याद रखें', listen: 'सुनें', stop: 'ऑडियो रोकें', previous: 'पिछला', slide: 'स्लाइड' },
+};
+
+const visualRules = [
+  { words: ['fire', 'hot work', 'حريق', 'آگ', 'आग'], icon: '🔥', tone: 'amber' },
+  { words: ['electric', 'voltage', 'كهرب', 'بجلی', 'विद्युत'], icon: '⚡', tone: 'blue' },
+  { words: ['fall', 'height', 'guardrail', 'سقوط', 'اونچائی', 'गिर'], icon: '🦺', tone: 'green' },
+  { words: ['excavat', 'trench', 'حفر', 'خندق', 'खाई'], icon: '⛏️', tone: 'earth' },
+  { words: ['crane', 'rigg', 'lift', 'scaffold', 'رافعة', 'رفع', 'کرین', 'उठ'], icon: '🏗️', tone: 'orange' },
+  { words: ['confined', 'entry', 'permit', 'محصور', 'داخل', 'प्रवेश'], icon: '🚧', tone: 'slate' },
+  { words: ['lockout', 'energy', 'عزل', 'قفل', 'توانائی', 'ऊर्जा'], icon: '🔒', tone: 'red' },
+  { words: ['chemical', 'hazard communication', 'sds', 'كيميائ', 'کیمیائی', 'रसायन'], icon: '🧪', tone: 'purple' },
+  { words: ['tool', 'equipment', 'machine', 'أداة', 'معدات', 'مشین', 'उपकरण'], icon: '🛠️', tone: 'teal' },
+];
+
+function presentSlide(title: string, text: string) {
+  const sentences = text.split(/(?<=[.!?؟۔।])\s+/u).map((part) => part.trim()).filter(Boolean);
+  const clauses = text.split(/;\s+/u).map((part) => part.trim()).filter(Boolean);
+  const lead = sentences.length > 1 ? sentences[0] : clauses[0] || text;
+  const bullets = sentences.length > 1 ? sentences.slice(1) : clauses.length > 1 ? clauses.slice(1) : [text];
+  const takeaway = bullets.at(-1) || lead;
+  const searchable = `${title} ${text}`.toLowerCase();
+  const visual = visualRules.find((rule) => rule.words.some((word) => searchable.includes(word))) || { icon: '⚠️', tone: 'green' };
+  const measurementPattern = /\b(?:\d+(?:[.,]\d+)?(?:\s*(?:±|x|×)\s*\d+(?:[.,]\d+)?)?\s*(?:%|ft²|ft|feet|inches|inch|in|m²|m|cm|mm|kV|V|A|amp|amps|psi|lb|lbs|pounds?|kg|kN|N|minutes?|hours?|days?|months?|years?|gallons?|gal)|\d+(?:[.,]\d+)?H\s*:\s*1V)\b/giu;
+  const figures = [...new Set(text.match(measurementPattern) || [])].slice(0, 4);
+  return { lead, bullets, takeaway, figures, visual };
+}
+
 const copy = {
   en: { choose: 'Choose your language', chooseHelp: 'Your lessons, questions, results, and certificate will use this language.', continue: 'Continue to account', account: 'Learner account', accountHelp: 'Sign in with your email and private password. New here? Choose Sign up to create an account.', name: 'Full name', email: 'Email address', password: 'Password', confirm: 'Confirm password', create: 'Create account', welcome: 'Welcome', progress: 'Your safety training', start: 'Start course', resume: 'Continue course', cards: '8 detailed slides', questions: '5 questions', pass: '80% required', lesson: 'Working at Height', next: 'Next slide', quiz: 'Start assessment', question: 'Question', submit: 'Submit answers', passed: 'Congratulations, you’ve passed!', failed: 'Review the lesson and try again.', score: 'Your score', attempts: 'Attempts used', certificate: 'Certificate ready to download', download: 'Download certificate PDF', home: 'Home', retry: 'Try again', dashboard: 'Back to courses', profile: 'Profile & certificates', save: 'Change password', saved: 'Password changed successfully.', signout: 'Sign out', standard: 'OSHA references', lock: 'Three attempts used. This course will reactivate 24 hours after your last attempt.' },
   ar: { choose: 'اختر لغتك', chooseHelp: 'ستُعرض الدروس والأسئلة والنتائج والشهادة بهذه اللغة.', continue: 'المتابعة إلى الحساب', account: 'حساب المتدرب', accountHelp: 'أنشئ حساباً أو سجّل الدخول باستخدام بريدك الإلكتروني وكلمة مرور خاصة.', name: 'الاسم الكامل', email: 'البريد الإلكتروني', password: 'كلمة المرور', confirm: 'تأكيد كلمة المرور', create: 'إنشاء الحساب', welcome: 'مرحباً', progress: 'تدريب السلامة الخاص بك', start: 'ابدأ الدورة', resume: 'متابعة الدورة', cards: '8 شرائح تفصيلية', questions: '5 أسئلة', pass: 'النجاح من 80٪', lesson: 'العمل على ارتفاعات', next: 'الشريحة التالية', quiz: 'ابدأ التقييم', question: 'السؤال', submit: 'إرسال الإجابات', passed: 'تهانينا، لقد نجحت!', failed: 'راجع الدرس ثم حاول مرة أخرى.', score: 'درجتك', attempts: 'المحاولات المستخدمة', certificate: 'الشهادة جاهزة للتنزيل', download: 'تنزيل الشهادة PDF', home: 'الرئيسية', retry: 'حاول مرة أخرى', dashboard: 'العودة إلى الدورات', profile: 'الملف الشخصي والشهادات', save: 'تغيير كلمة المرور', saved: 'تم تغيير كلمة المرور بنجاح.', signout: 'تسجيل الخروج', standard: 'مراجع OSHA', lock: 'تم استخدام ثلاث محاولات. ستُفعّل الدورة بعد 24 ساعة من آخر محاولة.' },
@@ -148,6 +180,8 @@ export default function Home() {
   const [certificates, setCertificates] = useState<CertificateRecord[]>([]);
   const [passwordMessage, setPasswordMessage] = useState('');
   const [serviceWarning, setServiceWarning] = useState('');
+  const [takeawayRevealed, setTakeawayRevealed] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
   const [activeCourseId, setActiveCourseId] = useState('WAH-001');
   const [completedCourseIds, setCompletedCourseIds] = useState<string[]>([]);
   const activeCourse = courseCatalog.find((item) => item.id === activeCourseId) || courseCatalog[0];
@@ -167,6 +201,32 @@ export default function Home() {
   const locked = Boolean(lockoutUntil && new Date(lockoutUntil) > new Date()) && !passed;
   const firstIncompleteIndex = courseCatalog.findIndex((item) => !completedCourseIds.includes(item.id));
   const availableCourseCount = courseCatalog.filter((item, index) => item.contentReady && (completedCourseIds.includes(item.id) || index === firstIncompleteIndex)).length;
+  const currentSlide = data.slides[slide];
+  const presentation = useMemo(() => presentSlide(currentSlide.title, currentSlide.text), [currentSlide.title, currentSlide.text]);
+  const lessonText = lessonUi[lang];
+
+  useEffect(() => {
+    setTakeawayRevealed(false);
+    setSpeaking(false);
+    window.speechSynthesis?.cancel();
+  }, [slide, activeCourseId, lang, view]);
+
+  function toggleNarration() {
+    if (!('speechSynthesis' in window)) return;
+    if (speaking) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+      return;
+    }
+    const utterance = new SpeechSynthesisUtterance(`${currentSlide.title}. ${currentSlide.text}`);
+    utterance.lang = { en: 'en-US', ar: 'ar-SA', ur: 'ur-PK', hi: 'hi-IN' }[lang];
+    utterance.rate = 0.92;
+    utterance.onend = () => setSpeaking(false);
+    utterance.onerror = () => setSpeaking(false);
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+    setSpeaking(true);
+  }
 
   function selectCourse(courseId: string) {
     setActiveCourseId(courseId);
@@ -178,6 +238,7 @@ export default function Home() {
     setCertificate(null);
     setLockoutUntil('');
     setError('');
+    setTakeawayRevealed(false);
   }
 
   function persistSession(session: FirebaseSession, details: Omit<StoredAuth, 'refreshToken'>) {
@@ -495,7 +556,57 @@ export default function Home() {
       )}
 
       {view === 'lesson' && (
-        <section className="narrow-wide"><div className="flex items-center justify-between gap-4"><button type="button" className="back-link" onClick={() => setView('dashboard')}>← {t.dashboard}</button><span className="text-xs font-bold text-[#65766c]">{slide + 1} / {data.slides.length}</span></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-[#dce8df]"><div className="h-full rounded-full bg-[#0a8a49] transition-all" style={{ width: `${((slide + 1) / data.slides.length) * 100}%` }} /></div><article className="lesson-card mt-6"><div className="lesson-number">{data.slides[slide].n}</div><p className="step">{t.lesson}</p><h1 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">{data.slides[slide].title}</h1><p className="mt-6 text-base leading-8 text-[#43594d] sm:text-lg">{data.slides[slide].text}</p><div className="mt-8 rounded-2xl bg-[#edf7f0] p-4"><span className="text-xs font-bold uppercase tracking-wider text-[#16814c]">{t.standard}</span><p className="mt-1 font-bold">{data.slides[slide].ref}</p></div><button type="button" onClick={() => { if (slide < data.slides.length - 1) { setSlide(slide + 1); } else { setAnswers(Array(data.quiz.length).fill(-1)); setView('quiz'); } }} className="primary-button mt-8">{slide < data.slides.length - 1 ? t.next : t.quiz}</button></article></section>
+        <section className="narrow-wide lesson-shell">
+          <div className="flex items-center justify-between gap-4">
+            <button type="button" className="back-link" onClick={() => setView('dashboard')}>← {t.dashboard}</button>
+            <span className="slide-counter">{lessonText.slide} {slide + 1} / {data.slides.length}</span>
+          </div>
+          <div className="lesson-progress" aria-label={`${slide + 1} of ${data.slides.length}`}>
+            <div style={{ width: `${((slide + 1) / data.slides.length) * 100}%` }} />
+          </div>
+          <div className="slide-dots" aria-label="Course slide navigation">
+            {data.slides.map((item, index) => <button key={item.n} type="button" aria-label={`${lessonText.slide} ${index + 1}`} aria-current={index === slide ? 'step' : undefined} className={index === slide ? 'active' : index < slide ? 'visited' : ''} onClick={() => setSlide(index)} />)}
+          </div>
+
+          <article className={`lesson-card interactive-lesson tone-${presentation.visual.tone}`}>
+            <div className="lesson-number">{currentSlide.n}</div>
+            <header className="lesson-heading">
+              <div className="lesson-icon" aria-hidden="true">{presentation.visual.icon}</div>
+              <div>
+                <p className="step">{lessonText.focus} · {t.lesson}</p>
+                <h1>{currentSlide.title}</h1>
+              </div>
+            </header>
+
+            <div className="lesson-lead">{presentation.lead}</div>
+
+            {presentation.figures.length > 0 && <section className="key-figures" aria-label={lessonText.figures}>
+              <p className="lesson-section-label">📏 {lessonText.figures}</p>
+              <div className="figure-grid">{presentation.figures.map((figure) => <strong key={figure} dir="ltr">{figure}</strong>)}</div>
+            </section>}
+
+            <section className="lesson-points">
+              <p className="lesson-section-label">✓ {lessonText.points}</p>
+              <ul>{presentation.bullets.map((point, index) => <li key={`${currentSlide.n}-${index}`}><span>{index + 1}</span><p>{point}</p></li>)}</ul>
+            </section>
+
+            <button type="button" className={`takeaway-card ${takeawayRevealed ? 'revealed' : ''}`} aria-expanded={takeawayRevealed} onClick={() => setTakeawayRevealed((value) => !value)}>
+              <span className="takeaway-symbol">{takeawayRevealed ? '✓' : '?'}</span>
+              <span><b>{takeawayRevealed ? lessonText.takeaway : lessonText.reveal}</b>{takeawayRevealed && <small>{presentation.takeaway}</small>}</span>
+              <span className="takeaway-chevron">⌄</span>
+            </button>
+
+            <div className="lesson-meta">
+              <button type="button" className={`audio-button ${speaking ? 'speaking' : ''}`} onClick={toggleNarration}>{speaking ? '■' : '▶'} {speaking ? lessonText.stop : lessonText.listen}</button>
+              <div><span>{t.standard}</span><b>{currentSlide.ref}</b></div>
+            </div>
+
+            <div className="lesson-actions">
+              <button type="button" disabled={slide === 0} onClick={() => setSlide((value) => Math.max(0, value - 1))} className="secondary-button">← {lessonText.previous}</button>
+              <button type="button" onClick={() => { if (slide < data.slides.length - 1) { setSlide(slide + 1); } else { setAnswers(Array(data.quiz.length).fill(-1)); setView('quiz'); } }} className="primary-button">{slide < data.slides.length - 1 ? `${t.next} →` : t.quiz}</button>
+            </div>
+          </article>
+        </section>
       )}
 
       {view === 'quiz' && (
