@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
+    "audit:answers": "node scripts/audit-answer-keys.mjs",
     "start": "next start",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"
@@ -27,3 +28,4 @@
   },
   "type": "module"
 }
+
