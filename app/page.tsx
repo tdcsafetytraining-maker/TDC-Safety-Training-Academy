@@ -247,6 +247,11 @@ export default function Home() {
   }, [view, idToken]);
 
   useEffect(() => {
+    setAnswers(Array(5).fill(-1));
+    setError('');
+  }, [activeCourseId, lang]);
+
+  useEffect(() => {
     if (view !== 'dashboard') return;
     const firstIncomplete = courseCatalog.find((item) => !completedCourseIds.includes(item.id));
     if (firstIncomplete && (activeCourseId === 'WAH-001' || completedCourseIds.includes(activeCourseId))) {
@@ -494,7 +499,7 @@ export default function Home() {
       )}
 
       {view === 'quiz' && (
-        <section className="narrow-wide"><button type="button" className="back-link" onClick={() => setView('lesson')}>← {t.lesson}</button><div className="mt-5"><p className="step">Assessment · Attempt {attempts + 1} of 3</p><h1 className="mt-2 text-3xl font-black">{t.questions} · {t.pass}</h1></div><div className="mt-7 space-y-5">{data.quiz.map((item, index) => <fieldset key={item.q} className="question-card"><legend className="font-extrabold"><span className="text-[#12824a]">{t.question} {index + 1}.</span> {item.q}</legend><div className="mt-4 space-y-2">{item.a.map((option, optionIndex) => <label key={option} className={`option ${answers[index] === optionIndex ? 'chosen' : ''}`}><input type="radio" name={`q-${index}`} checked={answers[index] === optionIndex} onChange={() => setAnswers((current) => current.map((value, answerIndex) => answerIndex === index ? optionIndex : value))} /><b className="option-letter" dir="ltr">{String.fromCharCode(65 + optionIndex)}.</b><span className="option-text">{option}</span></label>)}</div></fieldset>)}</div>{error && <p className="mt-4 rounded-xl bg-[#fff0ec] p-3 text-sm font-bold text-[#9a302b]">{error}</p>}<button type="button" disabled={!allAnswered || busy} onClick={gradeQuiz} className="primary-button mt-6">{busy ? 'Recording…' : t.submit}</button></section>
+        <section className="narrow-wide"><button type="button" className="back-link" onClick={() => setView('lesson')}>← {t.lesson}</button><div className="mt-5"><p className="step">Assessment · Attempt {attempts + 1} of 3</p><h1 className="mt-2 text-3xl font-black">{t.questions} · {t.pass}</h1></div><div className="mt-7 space-y-5">{data.quiz.map((item, index) => <fieldset key={`${activeCourseId}-${lang}-${index}`} className="question-card"><legend className="font-extrabold"><span className="text-[#12824a]">{t.question} {index + 1}.</span> {item.q}</legend><div className="mt-4 space-y-2">{item.a.map((option, optionIndex) => <label key={option} className={`option ${answers[index] === optionIndex ? 'chosen' : ''}`}><input type="radio" name={`${activeCourseId}-${lang}-q-${index}`} checked={answers[index] === optionIndex} onChange={() => setAnswers((current) => current.map((value, answerIndex) => answerIndex === index ? optionIndex : value))} /><b className="option-letter" dir="ltr">{String.fromCharCode(65 + optionIndex)}.</b><span className="option-text">{option}</span></label>)}</div></fieldset>)}</div>{error && <p className="mt-4 rounded-xl bg-[#fff0ec] p-3 text-sm font-bold text-[#9a302b]">{error}</p>}<button type="button" disabled={!allAnswered || busy} onClick={gradeQuiz} className="primary-button mt-6">{busy ? 'Recording…' : t.submit}</button></section>
       )}
 
       {view === 'result' && (
