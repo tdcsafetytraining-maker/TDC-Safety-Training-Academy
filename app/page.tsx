@@ -131,7 +131,7 @@ export default function Home() {
   const [selected, setSelected] = useState<Lang | ''>('en');
   const [view, setView] = useState<View>('account');
   const [slide, setSlide] = useState(0);
-  const [answers, setAnswers] = useState<number[]>([-1, -1, -1, -1, -1]);
+  const [answers, setAnswers] = useState<number[]>(() => Array(5).fill(-1));
   const [attempts, setAttempts] = useState(0);
   const [passed, setPassed] = useState(false);
   const [score, setScore] = useState(0);
@@ -171,7 +171,7 @@ export default function Home() {
   function selectCourse(courseId: string) {
     setActiveCourseId(courseId);
     setSlide(0);
-    setAnswers([-1, -1, -1, -1, -1]);
+    setAnswers(Array(5).fill(-1));
     setAttempts(0);
     setPassed(false);
     setScore(0);
@@ -251,6 +251,7 @@ export default function Home() {
     const firstIncomplete = courseCatalog.find((item) => !completedCourseIds.includes(item.id));
     if (firstIncomplete && (activeCourseId === 'WAH-001' || completedCourseIds.includes(activeCourseId))) {
       setActiveCourseId(firstIncomplete.id);
+      setAnswers(Array(5).fill(-1));
       setAttempts(0);
       setPassed(false);
       setLockoutUntil('');
@@ -378,7 +379,7 @@ export default function Home() {
   }
 
   function retry() {
-    setAnswers([-1, -1, -1, -1, -1]);
+    setAnswers(Array(5).fill(-1));
     setSlide(0);
     setView('lesson');
   }
@@ -404,7 +405,7 @@ export default function Home() {
   function signOut() {
     localStorage.removeItem(AUTH_STORAGE_KEY);
     setView('account'); setSelected(lang); setAuthMode('signin'); setShowPassword(false); setName(''); setEmail(''); setIdToken('');
-    setAttempts(0); setPassed(false); setCertificates([]); setCertificate(null); setError(''); setAuthNotice(''); setServiceWarning('');
+    setAnswers(Array(5).fill(-1)); setAttempts(0); setPassed(false); setCertificates([]); setCertificate(null); setError(''); setAuthNotice(''); setServiceWarning('');
     setCompletedCourseIds([]); setActiveCourseId('WAH-001');
   }
 
@@ -468,7 +469,7 @@ export default function Home() {
               <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[#596b61]"><span>{t.cards}</span><span>{t.questions}</span><span>{t.pass}</span></div>
               {locked && <div className="mt-5 rounded-xl bg-[#fff3dd] p-4 text-sm font-semibold text-[#7a5011]">{t.lock}<br/>{lockoutUntil}</div>}
               {!activeCourse.contentReady && <p className="mt-5 rounded-xl bg-[#eef4f0] p-4 text-sm font-semibold text-[#52665a]">This OSHA module is listed in the sequence and its reviewed multilingual lesson is being prepared.</p>}
-              <button type="button" disabled={locked || !activeCourse.contentReady} onClick={() => { setSlide(0); setView('lesson'); }} className="primary-button mt-6 sm:w-auto sm:px-8">{completedCourseIds.includes(activeCourse.id) ? 'Review course' : attempts ? t.resume : t.start}</button>
+              <button type="button" disabled={locked || !activeCourse.contentReady} onClick={() => { setSlide(0); setAnswers(Array(data.quiz.length).fill(-1)); setView('lesson'); }} className="primary-button mt-6 sm:w-auto sm:px-8">{completedCourseIds.includes(activeCourse.id) ? 'Review course' : attempts ? t.resume : t.start}</button>
             </div>
           </article>
           <h2 className="mt-10 text-lg font-black">Construction safety course sequence</h2>
@@ -489,7 +490,7 @@ export default function Home() {
       )}
 
       {view === 'lesson' && (
-        <section className="narrow-wide"><div className="flex items-center justify-between gap-4"><button type="button" className="back-link" onClick={() => setView('dashboard')}>← {t.dashboard}</button><span className="text-xs font-bold text-[#65766c]">{slide + 1} / {data.slides.length}</span></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-[#dce8df]"><div className="h-full rounded-full bg-[#0a8a49] transition-all" style={{ width: `${((slide + 1) / data.slides.length) * 100}%` }} /></div><article className="lesson-card mt-6"><div className="lesson-number">{data.slides[slide].n}</div><p className="step">{t.lesson}</p><h1 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">{data.slides[slide].title}</h1><p className="mt-6 text-base leading-8 text-[#43594d] sm:text-lg">{data.slides[slide].text}</p><div className="mt-8 rounded-2xl bg-[#edf7f0] p-4"><span className="text-xs font-bold uppercase tracking-wider text-[#16814c]">{t.standard}</span><p className="mt-1 font-bold">{data.slides[slide].ref}</p></div><button type="button" onClick={() => slide < data.slides.length - 1 ? setSlide(slide + 1) : setView('quiz')} className="primary-button mt-8">{slide < data.slides.length - 1 ? t.next : t.quiz}</button></article></section>
+        <section className="narrow-wide"><div className="flex items-center justify-between gap-4"><button type="button" className="back-link" onClick={() => setView('dashboard')}>← {t.dashboard}</button><span className="text-xs font-bold text-[#65766c]">{slide + 1} / {data.slides.length}</span></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-[#dce8df]"><div className="h-full rounded-full bg-[#0a8a49] transition-all" style={{ width: `${((slide + 1) / data.slides.length) * 100}%` }} /></div><article className="lesson-card mt-6"><div className="lesson-number">{data.slides[slide].n}</div><p className="step">{t.lesson}</p><h1 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">{data.slides[slide].title}</h1><p className="mt-6 text-base leading-8 text-[#43594d] sm:text-lg">{data.slides[slide].text}</p><div className="mt-8 rounded-2xl bg-[#edf7f0] p-4"><span className="text-xs font-bold uppercase tracking-wider text-[#16814c]">{t.standard}</span><p className="mt-1 font-bold">{data.slides[slide].ref}</p></div><button type="button" onClick={() => { if (slide < data.slides.length - 1) { setSlide(slide + 1); } else { setAnswers(Array(data.quiz.length).fill(-1)); setView('quiz'); } }} className="primary-button mt-8">{slide < data.slides.length - 1 ? t.next : t.quiz}</button></article></section>
       )}
 
       {view === 'quiz' && (
