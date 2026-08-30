@@ -180,7 +180,7 @@ const course = {
 export default function Home() {
   const [lang, setLang] = useState<Lang>('en');
   const [selected, setSelected] = useState<Lang | ''>('en');
-  const [view, setView] = useState<View>('account');
+  const [view, setView] = useState<View>('language');
   const [slide, setSlide] = useState(0);
   const [answers, setAnswers] = useState<number[]>(() => Array(5).fill(-1));
   const [attempts, setAttempts] = useState(0);
@@ -398,7 +398,7 @@ export default function Home() {
   function goHome() {
     setError('');
     setAuthNotice('');
-    setView(idToken ? 'dashboard' : 'account');
+    setView(idToken ? 'dashboard' : 'language');
   }
 
   async function authenticate(event: FormEvent<HTMLFormElement>) {
@@ -538,7 +538,7 @@ export default function Home() {
   function signOut() {
     localStorage.removeItem(AUTH_STORAGE_KEY);
     localStorage.removeItem(IDLE_ACTIVITY_KEY);
-    setView('account'); setSelected(lang); setAuthMode('signin'); setShowPassword(false); setName(''); setEmail(''); setIdToken('');
+    setView('language'); setSelected(lang); setAuthMode('signin'); setShowPassword(false); setName(''); setEmail(''); setIdToken('');
     setAnswers(Array(5).fill(-1)); setAttempts(0); setPassed(false); setCertificates([]); setCertificate(null); setError(''); setAuthNotice(''); setServiceWarning('');
     setCompletedCourseIds([]); setActiveCourseId('WAH-001'); setProjectRegion(''); setCity(''); setCustomCity('');
   }
