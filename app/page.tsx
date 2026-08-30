@@ -192,6 +192,8 @@ export default function Home() {
   const [city, setCity] = useState('');
   const [customCity, setCustomCity] = useState('');
   const activeCourse = courseCatalog.find((item) => item.id === activeCourseId) || courseCatalog[0];
+  const activeCourseIndex = courseCatalog.findIndex((item) => item.id === activeCourse.id);
+  const activeLanguageReady = activeCourseIndex < 17 || lang === 'en';
   const lessons: Record<string, CourseLesson> = {
     'CSP-002': confinedSpaceCourse[lang], 'SCA-003': scaffoldCourse[lang], 'FOP-004': fallingObjectCourse[lang],
     'HEM-005': equipmentCourse[lang], 'MMI-006': manMachineCourse[lang], 'RIG-007': riggingCourse[lang],
@@ -558,8 +560,9 @@ export default function Home() {
               <h2 className="mt-5 text-2xl font-black">{courseTitle}</h2>
               <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[#596b61]"><span>{t.cards}</span><span>{t.questions}</span><span>{t.pass}</span></div>
               {locked && <div className="mt-5 rounded-xl bg-[#fff3dd] p-4 text-sm font-semibold text-[#7a5011]">{t.lock}<br/>{lockoutUntil}</div>}
-              {!activeCourse.contentReady && <p className="mt-5 rounded-xl bg-[#eef4f0] p-4 text-sm font-semibold text-[#52665a]">This OSHA module is listed in the sequence and its reviewed multilingual lesson is being prepared.</p>}
-              <button type="button" disabled={locked || !activeCourse.contentReady} onClick={() => { setSlide(0); setAnswers(Array(data.quiz.length).fill(-1)); setView('lesson'); }} className="primary-button mt-6 sm:w-auto sm:px-8">{completedCourseIds.includes(activeCourse.id) ? 'Review course' : attempts ? t.resume : t.start}</button>
+              {!activeCourse.contentReady && <p className="mt-5 rounded-xl bg-[#eef4f0] p-4 text-sm font-semibold text-[#52665a]">This OSHA module is listed in the sequence and its reviewed lesson is being prepared.</p>}
+              {!activeLanguageReady && <p className="mt-5 rounded-xl bg-[#fff3dd] p-4 text-sm font-semibold text-[#7a5011]">This new module is currently available in English. Select English to take it; verified safety translations are not released until reviewed.</p>}
+              <button type="button" disabled={locked || !activeCourse.contentReady || !activeLanguageReady} onClick={() => { setSlide(0); setAnswers(Array(data.quiz.length).fill(-1)); setView('lesson'); }} className="primary-button mt-6 sm:w-auto sm:px-8">{completedCourseIds.includes(activeCourse.id) ? 'Review course' : attempts ? t.resume : t.start}</button>
             </div>
           </article>
           <h2 className="mt-10 text-lg font-black">Construction safety course sequence</h2>
@@ -568,9 +571,10 @@ export default function Home() {
             {courseCatalog.map((item, index) => {
               const completed = completedCourseIds.includes(item.id);
               const unlocked = completed || index === firstIncompleteIndex;
-              const selectable = unlocked && item.contentReady;
+              const languageReady = index < 17 || lang === 'en';
+              const selectable = unlocked && item.contentReady && languageReady;
               return <button key={item.id} type="button" disabled={!selectable} onClick={() => selectCourse(item.id)} className={`catalog-card ${activeCourse.id === item.id ? 'active' : ''}`}>
-                <span className={`catalog-status ${completed ? 'complete' : unlocked ? 'current' : ''}`}>{completed ? '✓ Completed' : unlocked ? (item.contentReady ? 'Available now' : 'Content in preparation') : '🔒 Locked'}</span>
+                <span className={`catalog-status ${completed ? 'complete' : unlocked ? 'current' : ''}`}>{completed ? '✓ Completed' : unlocked ? (!languageReady ? 'English version available' : item.contentReady ? 'Available now' : 'Content in preparation') : '🔒 Locked'}</span>
                 <span className="mt-3 block text-xs font-bold text-[#718078]">{String(index + 1).padStart(2, '0')} · {item.standard}</span>
                 <strong className="mt-2 block text-base">{item.titles[lang]}</strong>
               </button>;
