@@ -68,8 +68,8 @@ export async function callBackend<T>(action: string, payload: Record<string, unk
   }
 }
 
-export function registerLearner(idToken: string, fullName: string, language: string) {
-  return callBackend<{ learnerId: string }>('registerLearner', { idToken, fullName, language });
+export function registerLearner(idToken: string, fullName: string, language: string, projectRegion = '', city = '') {
+  return callBackend<{ learnerId: string }>('registerLearner', { idToken, fullName, language, projectRegion, city });
 }
 
 export function submitAttempt(payload: Record<string, unknown>) {
