@@ -12,6 +12,8 @@ import { manMachineCourse } from '../lib/man-machine-course';
 import { riggingCourse, signalCourse } from '../lib/final-courses-a';
 import { fireCourse, housekeepingCourse, excavationCourse, electricalCourse, lotoCourse } from '../lib/final-courses-b';
 import { ppeCourse, toolsCourse, hazcomCourse, emergencyCourse } from '../lib/final-courses-c';
+import { saudiProjectLocations, saudiProjectRegions, type SaudiProjectRegion } from '../lib/saudi-locations';
+import { materialStorageCourse, permitToWorkCourse, barriersSignsCourse, floorOpeningCourse, toolboxTalkCourse, manualHandlingCourse } from '../lib/additional-courses';
 
 type Lang = 'en' | 'ar' | 'ur' | 'hi';
 type View = 'language' | 'account' | 'dashboard' | 'lesson' | 'quiz' | 'result' | 'profile';
@@ -22,6 +24,8 @@ type StoredAuth = {
   name: string;
   language: Lang;
   completedCourseIds?: string[];
+  projectRegion?: SaudiProjectRegion | '';
+  city?: string;
 };
 
 const AUTH_STORAGE_KEY = 'tdc-safety-academy-session-v1';
@@ -184,6 +188,9 @@ export default function Home() {
   const [speaking, setSpeaking] = useState(false);
   const [activeCourseId, setActiveCourseId] = useState('WAH-001');
   const [completedCourseIds, setCompletedCourseIds] = useState<string[]>([]);
+  const [projectRegion, setProjectRegion] = useState<SaudiProjectRegion | ''>('');
+  const [city, setCity] = useState('');
+  const [customCity, setCustomCity] = useState('');
   const activeCourse = courseCatalog.find((item) => item.id === activeCourseId) || courseCatalog[0];
   const lessons: Record<string, CourseLesson> = {
     'CSP-002': confinedSpaceCourse[lang], 'SCA-003': scaffoldCourse[lang], 'FOP-004': fallingObjectCourse[lang],
@@ -191,6 +198,8 @@ export default function Home() {
     'SIG-008': signalCourse[lang], 'FIR-009': fireCourse[lang], 'HSK-010': housekeepingCourse[lang],
     'EXC-011': excavationCourse[lang], 'ELC-012': electricalCourse[lang], 'LOTO-013': lotoCourse[lang],
     'PPE-014': ppeCourse[lang], 'HPT-015': toolsCourse[lang], 'HAZ-016': hazcomCourse[lang], 'EMR-017': emergencyCourse[lang],
+    'STM-018': materialStorageCourse[lang], 'PTW-019': permitToWorkCourse[lang], 'BAR-020': barriersSignsCourse[lang],
+    'FLO-021': floorOpeningCourse[lang], 'TBT-022': toolboxTalkCourse[lang], 'MHL-023': manualHandlingCourse[lang],
   };
   const data = lessons[activeCourseId] || course[lang];
   const courseTitle = activeCourse.titles[lang];
@@ -277,12 +286,15 @@ export default function Home() {
         name: stored.name,
         language: stored.language,
         completedCourseIds: stored.completedCourseIds || [],
+        projectRegion: stored.projectRegion || '', city: stored.city || '',
       });
       setLang(stored.language);
       setSelected(stored.language);
       setName(stored.name);
       setEmail(stored.email);
       setCompletedCourseIds(stored.completedCourseIds || []);
+      setProjectRegion(stored.projectRegion || '');
+      setCity(stored.city || '');
       setView('dashboard');
     }).catch(() => {
       localStorage.removeItem(AUTH_STORAGE_KEY);
@@ -351,8 +363,15 @@ export default function Home() {
     const accountEmail = String(form.get('email') || '').trim();
     const first = String(form.get('password') || '');
     const second = String(form.get('confirm') || '');
+    const selectedRegion = String(form.get('projectRegion') || '') as SaudiProjectRegion | '';
+    const cityChoice = String(form.get('city') || '').trim();
+    const selectedCity = cityChoice === '__other__' ? String(form.get('customCity') || '').trim() : cityChoice;
     if (authMode === 'signup' && !fullName) {
       setError(accountText.nameRequired);
+      return;
+    }
+    if (authMode === 'signup' && (!selectedRegion || !selectedCity)) {
+      setError('Select your Saudi project region and city.');
       return;
     }
     if (first.length < 8 || (authMode === 'signup' && first !== second)) {
@@ -366,7 +385,8 @@ export default function Home() {
       if (authMode === 'signup') {
         const session = await signUp(accountEmail, first, fullName);
         const resolvedName = fullName;
-        try { await registerLearner(session.idToken, resolvedName, lang); } catch { /* Registration is retried after sign-in. */ }
+        try { await registerLearner(session.idToken, resolvedName, lang, selectedRegion, selectedCity); } catch { /* Registration is retried after sign-in. */ }
+        setProjectRegion(selectedRegion); setCity(selectedCity);
         authForm.reset();
         const emailInput = authForm.elements.namedItem('email') as HTMLInputElement | null;
         if (emailInput) emailInput.value = accountEmail;
@@ -382,12 +402,13 @@ export default function Home() {
         name: resolvedName,
         language: lang,
         completedCourseIds,
+        projectRegion, city,
       });
       setName(resolvedName);
       setEmail(session.email || accountEmail);
       setView('dashboard');
       try {
-        await registerLearner(session.idToken, resolvedName, lang);
+        await registerLearner(session.idToken, resolvedName, lang, projectRegion, city);
         setServiceWarning('');
       } catch {
         setServiceWarning('You are signed in. Training records are temporarily unavailable; please retry from your course or profile.');
@@ -460,7 +481,7 @@ export default function Home() {
     try {
       const freshIdToken = await renewIdToken();
       const session = await changePassword(freshIdToken, first);
-      persistSession(session, { email, name, language: lang, completedCourseIds });
+      persistSession(session, { email, name, language: lang, completedCourseIds, projectRegion, city });
       setPasswordMessage(t.saved);
       event.currentTarget.reset();
     } catch (problem) {
@@ -472,7 +493,7 @@ export default function Home() {
     localStorage.removeItem(AUTH_STORAGE_KEY);
     setView('account'); setSelected(lang); setAuthMode('signin'); setShowPassword(false); setName(''); setEmail(''); setIdToken('');
     setAnswers(Array(5).fill(-1)); setAttempts(0); setPassed(false); setCertificates([]); setCertificate(null); setError(''); setAuthNotice(''); setServiceWarning('');
-    setCompletedCourseIds([]); setActiveCourseId('WAH-001');
+    setCompletedCourseIds([]); setActiveCourseId('WAH-001'); setProjectRegion(''); setCity(''); setCustomCity('');
   }
 
   return (
@@ -502,6 +523,9 @@ export default function Home() {
             <p className="step">{accountText.entryStep}</p><h1 className="panel-title">{t.account}</h1><p className="panel-copy">{t.accountHelp}</p>
             <form onSubmit={authenticate} className="mt-6 space-y-4">
               {authMode === 'signup' && <label className="field"><span>{t.name}</span><input name="name" autoComplete="name" placeholder={accountText.requiredName} required /></label>}
+              {authMode === 'signup' && <label className="field"><span>Saudi project region</span><select name="projectRegion" value={projectRegion} required onChange={(event) => { setProjectRegion(event.target.value as SaudiProjectRegion); setCity(''); }}><option value="">Select project region</option>{saudiProjectRegions.map((region) => <option key={region} value={region}>{region}</option>)}</select></label>}
+              {authMode === 'signup' && <label className="field"><span>City</span><select name="city" value={city} required disabled={!projectRegion} onChange={(event) => { setCity(event.target.value); setCustomCity(''); }}><option value="">{projectRegion ? 'Select city' : 'Select a region first'}</option>{projectRegion && saudiProjectLocations[projectRegion].map((location) => <option key={location} value={location}>{location}</option>)}{projectRegion && <option value="__other__">Other Saudi city / project site</option>}</select></label>}
+              {authMode === 'signup' && city === '__other__' && <label className="field"><span>Enter city or project site</span><input name="customCity" value={customCity} onChange={(event) => setCustomCity(event.target.value)} required maxLength={100} /></label>}
               <label className="field"><span>{t.email}</span><input name="email" type="email" required autoComplete="email" /></label>
               <label className="field"><span>{t.password}</span><input name="password" type={showPassword ? 'text' : 'password'} required minLength={8} autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'} /></label>
               {authMode === 'signup' && <label className="field"><span>{t.confirm}</span><input name="confirm" type={showPassword ? 'text' : 'password'} required minLength={8} autoComplete="new-password" /></label>}
@@ -524,7 +548,7 @@ export default function Home() {
           <p className="step">{t.welcome}, {name || 'Learner'}</p>
           <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
             <div><h1 className="text-3xl font-black tracking-tight sm:text-4xl">{t.progress}</h1><p className="mt-2 text-sm text-[#65756c]">{email}</p></div>
-            <span className="pill">{availableCourseCount} course active · {completedCourseIds.length}/17 completed</span>
+            <span className="pill">{availableCourseCount} course active · {completedCourseIds.length}/{courseCatalog.length} completed</span>
           </div>
           {serviceWarning && <p className="mt-5 rounded-xl bg-[#fff3dd] p-4 text-sm font-semibold text-[#7a5011]">{serviceWarning}</p>}
           <article className="course-card mt-8">
