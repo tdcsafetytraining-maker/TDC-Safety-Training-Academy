@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { CertificateRecord, getProfile, registerLearner, submitAttempt } from '../lib/backend';
 import { changePassword, FirebaseSession, refreshSession, sendPasswordReset, signIn, signUp } from '../lib/firebase-rest';
-import { confinedSpaceCourse, courseCatalog, type CourseLesson } from '../lib/course-catalog';
+import { confinedSpaceCourse, courseCatalog, type CourseLanguage, type CourseLesson } from '../lib/course-catalog';
 import { scaffoldCourse } from '../lib/phase-one-courses';
 import { fallingObjectCourse } from '../lib/falling-object-course';
 import { equipmentCourse } from '../lib/equipment-course';
@@ -14,8 +14,9 @@ import { fireCourse, housekeepingCourse, excavationCourse, electricalCourse, lot
 import { ppeCourse, toolsCourse, hazcomCourse, emergencyCourse } from '../lib/final-courses-c';
 import { saudiProjectLocations, saudiProjectRegions, type SaudiProjectRegion } from '../lib/saudi-locations';
 import { materialStorageCourse, permitToWorkCourse, barriersSignsCourse, floorOpeningCourse, toolboxTalkCourse, manualHandlingCourse } from '../lib/additional-courses';
+import { banglaCourses } from '../lib/bangla-courses.generated';
 
-type Lang = 'en' | 'ar' | 'ur' | 'hi';
+type Lang = CourseLanguage | 'bn';
 type View = 'language' | 'account' | 'dashboard' | 'lesson' | 'quiz' | 'result' | 'profile';
 
 type StoredAuth = {
@@ -29,12 +30,15 @@ type StoredAuth = {
 };
 
 const AUTH_STORAGE_KEY = 'tdc-safety-academy-session-v1';
+const IDLE_ACTIVITY_KEY = 'tdc-safety-academy-last-activity';
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 
 const languages: { code: Lang; name: string; local: string; rtl: boolean }[] = [
   { code: 'en', name: 'English', local: 'English', rtl: false },
   { code: 'ar', name: 'Arabic', local: 'العربية', rtl: true },
   { code: 'ur', name: 'Urdu', local: 'اردو', rtl: true },
   { code: 'hi', name: 'Hindi', local: 'हिन्दी', rtl: false },
+  { code: 'bn', name: 'Bangla', local: 'বাংলা', rtl: false },
 ];
 
 const lessonUi: Record<Lang, { focus: string; points: string; figures: string; reveal: string; takeaway: string; listen: string; stop: string; previous: string; slide: string }> = {
@@ -42,18 +46,19 @@ const lessonUi: Record<Lang, { focus: string; points: string; figures: string; r
   ar: { focus: 'محور السلامة', points: 'ما يجب أن تعرفه', figures: 'الأرقام المهمة', reveal: 'اضغط لإظهار الخلاصة المهمة', takeaway: 'تذكر هذا', listen: 'استمع', stop: 'إيقاف الصوت', previous: 'السابق', slide: 'الشريحة' },
   ur: { focus: 'حفاظتی توجہ', points: 'آپ کو کیا جاننا ہے', figures: 'اہم اعداد', reveal: 'اہم خلاصہ دیکھنے کے لیے دبائیں', takeaway: 'یہ یاد رکھیں', listen: 'سنیں', stop: 'آواز بند کریں', previous: 'پچھلی', slide: 'سلائیڈ' },
   hi: { focus: 'सुरक्षा विषय', points: 'आपको क्या जानना है', figures: 'मुख्य आँकड़े', reveal: 'मुख्य बात देखने के लिए टैप करें', takeaway: 'इसे याद रखें', listen: 'सुनें', stop: 'ऑडियो रोकें', previous: 'पिछला', slide: 'स्लाइड' },
+  bn: { focus: 'নিরাপত্তার বিষয়', points: 'যা আপনার জানা দরকার', figures: 'গুরুত্বপূর্ণ পরিমাপ', reveal: 'মূল বিষয়টি দেখতে ট্যাপ করুন', takeaway: 'এটি মনে রাখুন', listen: 'শুনুন', stop: 'অডিও বন্ধ করুন', previous: 'পূর্ববর্তী', slide: 'স্লাইড' },
 };
 
 const visualRules = [
-  { words: ['fire', 'hot work', 'حريق', 'آگ', 'आग'], icon: '🔥', tone: 'amber' },
-  { words: ['electric', 'voltage', 'كهرب', 'بجلی', 'विद्युत'], icon: '⚡', tone: 'blue' },
-  { words: ['fall', 'height', 'guardrail', 'سقوط', 'اونچائی', 'गिर'], icon: '🦺', tone: 'green' },
-  { words: ['excavat', 'trench', 'حفر', 'خندق', 'खाई'], icon: '⛏️', tone: 'earth' },
-  { words: ['crane', 'rigg', 'lift', 'scaffold', 'رافعة', 'رفع', 'کرین', 'उठ'], icon: '🏗️', tone: 'orange' },
-  { words: ['confined', 'entry', 'permit', 'محصور', 'داخل', 'प्रवेश'], icon: '🚧', tone: 'slate' },
-  { words: ['lockout', 'energy', 'عزل', 'قفل', 'توانائی', 'ऊर्जा'], icon: '🔒', tone: 'red' },
-  { words: ['chemical', 'hazard communication', 'sds', 'كيميائ', 'کیمیائی', 'रसायन'], icon: '🧪', tone: 'purple' },
-  { words: ['tool', 'equipment', 'machine', 'أداة', 'معدات', 'مشین', 'उपकरण'], icon: '🛠️', tone: 'teal' },
+  { words: ['fire', 'hot work', 'حريق', 'آگ', 'आग', 'আগুন'], icon: '🔥', tone: 'amber' },
+  { words: ['electric', 'voltage', 'كهرب', 'بجلی', 'विद्युत', 'বৈদ্যুতিক'], icon: '⚡', tone: 'blue' },
+  { words: ['fall', 'height', 'guardrail', 'سقوط', 'اونچائی', 'गिर', 'পতন', 'উচ্চতায়'], icon: '🦺', tone: 'green' },
+  { words: ['excavat', 'trench', 'حفر', 'خندق', 'खाई', 'খনন', 'পরিখা'], icon: '⛏️', tone: 'earth' },
+  { words: ['crane', 'rigg', 'lift', 'scaffold', 'رافعة', 'رفع', 'کرین', 'उठ', 'ক্রেন', 'উত্তোলন', 'ভারা'], icon: '🏗️', tone: 'orange' },
+  { words: ['confined', 'entry', 'permit', 'محصور', 'داخل', 'प्रवेश', 'সীমাবদ্ধ', 'প্রবেশ', 'পারমিট'], icon: '🚧', tone: 'slate' },
+  { words: ['lockout', 'energy', 'عزل', 'قفل', 'توانائی', 'ऊर्जा', 'লকআউট', 'শক্তি'], icon: '🔒', tone: 'red' },
+  { words: ['chemical', 'hazard communication', 'sds', 'كيميائ', 'کیمیائی', 'रसायन', 'রাসায়নিক'], icon: '🧪', tone: 'purple' },
+  { words: ['tool', 'equipment', 'machine', 'أداة', 'معدات', 'مشین', 'उपकरण', 'সরঞ্জাম', 'মেশিন'], icon: '🛠️', tone: 'teal' },
 ];
 
 function presentSlide(title: string, text: string) {
@@ -74,6 +79,7 @@ const copy = {
   ar: { choose: 'اختر لغتك', chooseHelp: 'ستُعرض الدروس والأسئلة والنتائج والشهادة بهذه اللغة.', continue: 'المتابعة إلى الحساب', account: 'حساب المتدرب', accountHelp: 'أنشئ حساباً أو سجّل الدخول باستخدام بريدك الإلكتروني وكلمة مرور خاصة.', name: 'الاسم الكامل', email: 'البريد الإلكتروني', password: 'كلمة المرور', confirm: 'تأكيد كلمة المرور', create: 'إنشاء الحساب', welcome: 'مرحباً', progress: 'تدريب السلامة الخاص بك', start: 'ابدأ الدورة', resume: 'متابعة الدورة', cards: '8 شرائح تفصيلية', questions: '5 أسئلة', pass: 'النجاح من 80٪', lesson: 'العمل على ارتفاعات', next: 'الشريحة التالية', quiz: 'ابدأ التقييم', question: 'السؤال', submit: 'إرسال الإجابات', passed: 'تهانينا، لقد نجحت!', failed: 'راجع الدرس ثم حاول مرة أخرى.', score: 'درجتك', attempts: 'المحاولات المستخدمة', certificate: 'الشهادة جاهزة للتنزيل', download: 'تنزيل الشهادة PDF', home: 'الرئيسية', retry: 'حاول مرة أخرى', dashboard: 'العودة إلى الدورات', profile: 'الملف الشخصي والشهادات', save: 'تغيير كلمة المرور', saved: 'تم تغيير كلمة المرور بنجاح.', signout: 'تسجيل الخروج', standard: 'مراجع OSHA', lock: 'تم استخدام ثلاث محاولات. ستُفعّل الدورة بعد 24 ساعة من آخر محاولة.' },
   ur: { choose: 'اپنی زبان منتخب کریں', chooseHelp: 'آپ کے اسباق، سوالات، نتائج اور سرٹیفکیٹ اسی زبان میں ہوں گے۔', continue: 'اکاؤنٹ کی طرف جائیں', account: 'تربیتی اکاؤنٹ', accountHelp: 'اکاؤنٹ بنائیں یا اپنے ای میل اور نجی پاس ورڈ سے سائن اِن کریں۔', name: 'پورا نام', email: 'ای میل ایڈریس', password: 'پاس ورڈ', confirm: 'پاس ورڈ کی تصدیق', create: 'اکاؤنٹ بنائیں', welcome: 'خوش آمدید', progress: 'آپ کی حفاظتی تربیت', start: 'کورس شروع کریں', resume: 'کورس جاری رکھیں', cards: '8 تفصیلی سلائیڈز', questions: '5 سوالات', pass: '80٪ کامیابی ضروری', lesson: 'بلندی پر کام', next: 'اگلی سلائیڈ', quiz: 'جائزہ شروع کریں', question: 'سوال', submit: 'جوابات جمع کریں', passed: 'مبارک ہو، آپ کامیاب ہوگئے!', failed: 'سبق کا دوبارہ جائزہ لیں اور پھر کوشش کریں۔', score: 'آپ کا اسکور', attempts: 'استعمال شدہ کوششیں', certificate: 'سرٹیفکیٹ ڈاؤن لوڈ کے لیے تیار ہے', download: 'سرٹیفکیٹ PDF ڈاؤن لوڈ کریں', home: 'ہوم', retry: 'دوبارہ کوشش کریں', dashboard: 'کورسز پر واپس جائیں', profile: 'پروفائل اور سرٹیفکیٹس', save: 'پاس ورڈ تبدیل کریں', saved: 'پاس ورڈ کامیابی سے تبدیل ہوگیا۔', signout: 'سائن آؤٹ', standard: 'OSHA حوالہ جات', lock: 'تین کوششیں مکمل ہوگئیں۔ آخری کوشش کے 24 گھنٹے بعد کورس دوبارہ فعال ہوگا۔' },
   hi: { choose: 'अपनी भाषा चुनें', chooseHelp: 'आपके पाठ, प्रश्न, परिणाम और प्रमाणपत्र इसी भाषा में होंगे।', continue: 'खाते पर जाएँ', account: 'प्रशिक्षु खाता', accountHelp: 'खाता बनाएँ या अपने ईमेल और निजी पासवर्ड से साइन इन करें।', name: 'पूरा नाम', email: 'ईमेल पता', password: 'पासवर्ड', confirm: 'पासवर्ड की पुष्टि', create: 'खाता बनाएँ', welcome: 'स्वागत है', progress: 'आपका सुरक्षा प्रशिक्षण', start: 'पाठ्यक्रम शुरू करें', resume: 'पाठ्यक्रम जारी रखें', cards: '8 विस्तृत स्लाइड', questions: '5 प्रश्न', pass: '80% उत्तीर्ण अंक', lesson: 'ऊँचाई पर काम', next: 'अगली स्लाइड', quiz: 'मूल्यांकन शुरू करें', question: 'प्रश्न', submit: 'उत्तर जमा करें', passed: 'बधाई हो, आप उत्तीर्ण हुए!', failed: 'पाठ की समीक्षा करें और फिर प्रयास करें।', score: 'आपका अंक', attempts: 'प्रयुक्त प्रयास', certificate: 'प्रमाणपत्र डाउनलोड के लिए तैयार है', download: 'प्रमाणपत्र PDF डाउनलोड करें', home: 'होम', retry: 'फिर प्रयास करें', dashboard: 'पाठ्यक्रमों पर लौटें', profile: 'प्रोफ़ाइल और प्रमाणपत्र', save: 'पासवर्ड बदलें', saved: 'पासवर्ड सफलतापूर्वक बदल दिया गया।', signout: 'साइन आउट', standard: 'OSHA संदर्भ', lock: 'तीन प्रयास पूरे हो गए हैं। अंतिम प्रयास के 24 घंटे बाद पाठ्यक्रम फिर सक्रिय होगा।' },
+  bn: { choose: 'আপনার ভাষা নির্বাচন করুন', chooseHelp: 'আপনার পাঠ, প্রশ্ন, ফলাফল এবং সনদ এই ভাষায় দেখানো হবে।', continue: 'অ্যাকাউন্টে যান', account: 'প্রশিক্ষণার্থীর অ্যাকাউন্ট', accountHelp: 'আপনার ইমেইল ও ব্যক্তিগত পাসওয়ার্ড দিয়ে সাইন ইন করুন। নতুন হলে সাইন আপ করুন।', name: 'পূর্ণ নাম', email: 'ইমেইল ঠিকানা', password: 'পাসওয়ার্ড', confirm: 'পাসওয়ার্ড নিশ্চিত করুন', create: 'অ্যাকাউন্ট তৈরি করুন', welcome: 'স্বাগতম', progress: 'আপনার নিরাপত্তা প্রশিক্ষণ', start: 'কোর্স শুরু করুন', resume: 'কোর্স চালিয়ে যান', cards: '৮টি বিস্তারিত স্লাইড', questions: '৫টি প্রশ্ন', pass: '৮০% পাস নম্বর', lesson: 'উচ্চতায় কাজ', next: 'পরবর্তী স্লাইড', quiz: 'মূল্যায়ন শুরু করুন', question: 'প্রশ্ন', submit: 'উত্তর জমা দিন', passed: 'অভিনন্দন, আপনি পাস করেছেন!', failed: 'পাঠটি পর্যালোচনা করে আবার চেষ্টা করুন।', score: 'আপনার নম্বর', attempts: 'ব্যবহৃত প্রচেষ্টা', certificate: 'সনদ ডাউনলোডের জন্য প্রস্তুত', download: 'সনদের PDF ডাউনলোড করুন', home: 'হোম', retry: 'আবার চেষ্টা করুন', dashboard: 'কোর্সে ফিরে যান', profile: 'প্রোফাইল ও সনদ', save: 'পাসওয়ার্ড পরিবর্তন করুন', saved: 'পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে।', signout: 'সাইন আউট', standard: 'OSHA রেফারেন্স', lock: 'তিনটি প্রচেষ্টা শেষ হয়েছে। শেষ প্রচেষ্টার ২৪ ঘণ্টা পরে কোর্সটি আবার সক্রিয় হবে।' },
 };
 
 const accountUi: Record<Lang, { createTab: string; signInTab: string; entryStep: string; noAccount: string; haveAccount: string; requiredName: string; nameRequired: string; signInNote: string; securityNote: string; wait: string; forgot: string; sessionEnded: string; showPassword: string; hidePassword: string; signupSuccess: string }> = {
@@ -81,6 +87,15 @@ const accountUi: Record<Lang, { createTab: string; signInTab: string; entryStep:
   ar: { createTab: 'إنشاء حساب', signInTab: 'تسجيل الدخول', entryStep: 'الوصول إلى التدريب', noAccount: 'ليس لديك حساب؟ أنشئ حساباً', haveAccount: 'لديك حساب بالفعل؟ سجّل الدخول', requiredName: 'مطلوب · يُطبع على الشهادات', nameRequired: 'أدخل اسمك الكامل. سيظهر على شهاداتك.', signInNote: 'سجّل الدخول باستخدام بريدك الإلكتروني المسجل وكلمة المرور. تُعالج كلمات المرور بأمان بواسطة Firebase.', securityNote: 'الاسم الكامل والبريد الإلكتروني وكلمة المرور مطلوبة لإنشاء حساب. تُعالج كلمات المرور بواسطة Firebase ولا تُكتب في جداول Google.', wait: 'يرجى الانتظار…', forgot: 'نسيت كلمة المرور؟', sessionEnded: 'تعذر تجديد الجلسة. سجّل الدخول مرة أخرى؛ ستبقى إجاباتك المحددة على هذا الجهاز.', showPassword: 'إظهار كلمة المرور', hidePassword: 'إخفاء كلمة المرور', signupSuccess: 'تم إنشاء الحساب بنجاح. يرجى تسجيل الدخول باستخدام بريدك الإلكتروني وكلمة المرور.' },
   ur: { createTab: 'سائن اپ', signInTab: 'سائن اِن', entryStep: 'اپنی تربیت تک رسائی', noAccount: 'اکاؤنٹ نہیں ہے؟ سائن اپ کریں', haveAccount: 'پہلے سے اکاؤنٹ ہے؟ سائن اِن کریں', requiredName: 'ضروری · سرٹیفکیٹ پر درج ہوگا', nameRequired: 'اپنا پورا نام درج کریں۔ یہ آپ کے سرٹیفکیٹس پر ظاہر ہوگا۔', signInNote: 'اپنے رجسٹرڈ ای میل اور پاس ورڈ سے سائن اِن کریں۔ پاس ورڈ Firebase محفوظ طریقے سے سنبھالتا ہے۔', securityNote: 'اکاؤنٹ بنانے کے لیے پورا نام، ای میل اور پاس ورڈ درکار ہیں۔ پاس ورڈ Firebase سنبھالتا ہے اور Google Sheets میں کبھی محفوظ نہیں ہوتا۔', wait: 'براہ کرم انتظار کریں…', forgot: 'پاس ورڈ بھول گئے؟', sessionEnded: 'سیشن کی تجدید نہیں ہو سکی۔ دوبارہ سائن اِن کریں؛ آپ کے منتخب جوابات اسی ڈیوائس پر رہیں گے۔', showPassword: 'پاس ورڈ دکھائیں', hidePassword: 'پاس ورڈ چھپائیں', signupSuccess: 'اکاؤنٹ کامیابی سے بن گیا۔ براہ کرم اپنے ای میل اور پاس ورڈ سے سائن اِن کریں۔' },
   hi: { createTab: 'साइन अप', signInTab: 'साइन इन', entryStep: 'अपना प्रशिक्षण खोलें', noAccount: 'खाता नहीं है? साइन अप करें', haveAccount: 'पहले से खाता है? साइन इन करें', requiredName: 'आवश्यक · प्रमाणपत्र पर मुद्रित होगा', nameRequired: 'अपना पूरा नाम दर्ज करें। यह आपके प्रमाणपत्रों पर दिखाई देगा।', signInNote: 'अपने पंजीकृत ईमेल और पासवर्ड से साइन इन करें। पासवर्ड Firebase Authentication द्वारा सुरक्षित रूप से संभाले जाते हैं।', securityNote: 'खाता बनाने के लिए पूरा नाम, ईमेल और पासवर्ड आवश्यक हैं। पासवर्ड Firebase संभालता है और Google Sheets में कभी नहीं लिखा जाता।', wait: 'कृपया प्रतीक्षा करें…', forgot: 'पासवर्ड भूल गए?', sessionEnded: 'सत्र नवीनीकृत नहीं हो सका। फिर साइन इन करें; चुने हुए उत्तर इसी डिवाइस पर बने रहेंगे।', showPassword: 'पासवर्ड दिखाएँ', hidePassword: 'पासवर्ड छिपाएँ', signupSuccess: 'खाता सफलतापूर्वक बन गया। कृपया अपने ईमेल और पासवर्ड से साइन इन करें।' },
+  bn: { createTab: 'সাইন আপ', signInTab: 'সাইন ইন', entryStep: 'আপনার প্রশিক্ষণে প্রবেশ করুন', noAccount: 'অ্যাকাউন্ট নেই? সাইন আপ করুন', haveAccount: 'ইতিমধ্যে অ্যাকাউন্ট আছে? সাইন ইন করুন', requiredName: 'আবশ্যক · সনদে মুদ্রিত হবে', nameRequired: 'আপনার পূর্ণ নাম লিখুন। এটি সনদে দেখানো হবে।', signInNote: 'নিবন্ধিত ইমেইল ও পাসওয়ার্ড দিয়ে সাইন ইন করুন। Firebase Authentication নিরাপদে পাসওয়ার্ড পরিচালনা করে।', securityNote: 'অ্যাকাউন্ট তৈরির জন্য পূর্ণ নাম, ইমেইল ও পাসওয়ার্ড আবশ্যক। পাসওয়ার্ড Firebase পরিচালনা করে এবং Google Sheets-এ লেখা হয় না।', wait: 'অনুগ্রহ করে অপেক্ষা করুন…', forgot: 'পাসওয়ার্ড ভুলে গেছেন?', sessionEnded: 'সেশন নবায়ন করা যায়নি। আবার সাইন ইন করুন; নির্বাচিত উত্তর এই ডিভাইসে থাকবে।', showPassword: 'পাসওয়ার্ড দেখান', hidePassword: 'পাসওয়ার্ড লুকান', signupSuccess: 'অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে। ইমেইল ও পাসওয়ার্ড দিয়ে সাইন ইন করুন।' },
+};
+
+const idleMessages: Record<Lang, string> = {
+  en: 'You were signed out after 30 minutes of inactivity. Please sign in again.',
+  ar: 'تم تسجيل خروجك بعد 30 دقيقة من عدم النشاط. يرجى تسجيل الدخول مرة أخرى.',
+  ur: '30 منٹ غیر فعال رہنے کے بعد آپ کو سائن آؤٹ کر دیا گیا۔ دوبارہ سائن اِن کریں۔',
+  hi: '30 मिनट निष्क्रिय रहने के बाद आपको साइन आउट कर दिया गया। कृपया फिर साइन इन करें।',
+  bn: '৩০ মিনিট কোনো কার্যক্রম না থাকায় আপনাকে সাইন আউট করা হয়েছে। আবার সাইন ইন করুন।',
 };
 
 const course = {
@@ -192,19 +207,18 @@ export default function Home() {
   const [city, setCity] = useState('');
   const [customCity, setCustomCity] = useState('');
   const activeCourse = courseCatalog.find((item) => item.id === activeCourseId) || courseCatalog[0];
-  const activeCourseIndex = courseCatalog.findIndex((item) => item.id === activeCourse.id);
-  const activeLanguageReady = activeCourseIndex < 17 || lang === 'en';
+  const baseLang: CourseLanguage = lang === 'bn' ? 'en' : lang;
   const lessons: Record<string, CourseLesson> = {
-    'CSP-002': confinedSpaceCourse[lang], 'SCA-003': scaffoldCourse[lang], 'FOP-004': fallingObjectCourse[lang],
-    'HEM-005': equipmentCourse[lang], 'MMI-006': manMachineCourse[lang], 'RIG-007': riggingCourse[lang],
-    'SIG-008': signalCourse[lang], 'FIR-009': fireCourse[lang], 'HSK-010': housekeepingCourse[lang],
-    'EXC-011': excavationCourse[lang], 'ELC-012': electricalCourse[lang], 'LOTO-013': lotoCourse[lang],
-    'PPE-014': ppeCourse[lang], 'HPT-015': toolsCourse[lang], 'HAZ-016': hazcomCourse[lang], 'EMR-017': emergencyCourse[lang],
-    'STM-018': materialStorageCourse[lang], 'PTW-019': permitToWorkCourse[lang], 'BAR-020': barriersSignsCourse[lang],
-    'FLO-021': floorOpeningCourse[lang], 'TBT-022': toolboxTalkCourse[lang], 'MHL-023': manualHandlingCourse[lang],
+    'CSP-002': confinedSpaceCourse[baseLang], 'SCA-003': scaffoldCourse[baseLang], 'FOP-004': fallingObjectCourse[baseLang],
+    'HEM-005': equipmentCourse[baseLang], 'MMI-006': manMachineCourse[baseLang], 'RIG-007': riggingCourse[baseLang],
+    'SIG-008': signalCourse[baseLang], 'FIR-009': fireCourse[baseLang], 'HSK-010': housekeepingCourse[baseLang],
+    'EXC-011': excavationCourse[baseLang], 'ELC-012': electricalCourse[baseLang], 'LOTO-013': lotoCourse[baseLang],
+    'PPE-014': ppeCourse[baseLang], 'HPT-015': toolsCourse[baseLang], 'HAZ-016': hazcomCourse[baseLang], 'EMR-017': emergencyCourse[baseLang],
+    'STM-018': materialStorageCourse[baseLang], 'PTW-019': permitToWorkCourse[baseLang], 'BAR-020': barriersSignsCourse[baseLang],
+    'FLO-021': floorOpeningCourse[baseLang], 'TBT-022': toolboxTalkCourse[baseLang], 'MHL-023': manualHandlingCourse[baseLang],
   };
-  const data = lessons[activeCourseId] || course[lang];
-  const courseTitle = activeCourse.titles[lang];
+  const data = lang === 'bn' ? banglaCourses[activeCourseId] : lessons[activeCourseId] || course[baseLang];
+  const courseTitle = lang === 'bn' ? banglaCourses[activeCourse.id].title : activeCourse.titles[baseLang];
   const t = { ...copy[lang], lesson: courseTitle };
   const accountText = accountUi[lang];
   const rtl = languages.find((item) => item.code === lang)?.rtl;
@@ -230,7 +244,7 @@ export default function Home() {
       return;
     }
     const utterance = new SpeechSynthesisUtterance(`${currentSlide.title}. ${currentSlide.text}`);
-    utterance.lang = { en: 'en-US', ar: 'ar-SA', ur: 'ur-PK', hi: 'hi-IN' }[lang];
+    utterance.lang = { en: 'en-US', ar: 'ar-SA', ur: 'ur-PK', hi: 'hi-IN', bn: 'bn-BD' }[lang];
     utterance.rate = 0.92;
     utterance.onend = () => setSpeaking(false);
     utterance.onerror = () => setSpeaking(false);
@@ -255,6 +269,7 @@ export default function Home() {
   function persistSession(session: FirebaseSession, details: Omit<StoredAuth, 'refreshToken'>) {
     const stored: StoredAuth = { ...details, refreshToken: session.refreshToken };
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(stored));
+    if (!localStorage.getItem(IDLE_ACTIVITY_KEY)) localStorage.setItem(IDLE_ACTIVITY_KEY, String(Date.now()));
     setIdToken(session.idToken);
   }
 
@@ -310,6 +325,35 @@ export default function Home() {
     document.addEventListener('visibilitychange', refreshWhenVisible);
     return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', refreshWhenVisible); };
   }, [idToken]);
+
+  useEffect(() => {
+    if (!idToken) return;
+    let lastActivity = Number(localStorage.getItem(IDLE_ACTIVITY_KEY)) || Date.now();
+    let lastStored = lastActivity;
+    const recordActivity = () => {
+      lastActivity = Date.now();
+      if (lastActivity - lastStored >= 5000) {
+        localStorage.setItem(IDLE_ACTIVITY_KEY, String(lastActivity));
+        lastStored = lastActivity;
+      }
+    };
+    const checkIdle = () => {
+      lastActivity = Math.max(lastActivity, Number(localStorage.getItem(IDLE_ACTIVITY_KEY)) || 0);
+      if (Date.now() - lastActivity < IDLE_TIMEOUT_MS) return;
+      signOut();
+      setError(idleMessages[lang]);
+    };
+    const activityEvents: Array<keyof WindowEventMap> = ['pointerdown', 'keydown', 'touchstart', 'scroll'];
+    activityEvents.forEach((eventName) => window.addEventListener(eventName, recordActivity, { passive: true }));
+    document.addEventListener('visibilitychange', checkIdle);
+    const idleTimer = window.setInterval(checkIdle, 15000);
+    checkIdle();
+    return () => {
+      activityEvents.forEach((eventName) => window.removeEventListener(eventName, recordActivity));
+      document.removeEventListener('visibilitychange', checkIdle);
+      window.clearInterval(idleTimer);
+    };
+  }, [idToken, lang]);
 
   useEffect(() => {
     if ((view !== 'profile' && view !== 'dashboard') || !idToken) return;
@@ -493,6 +537,7 @@ export default function Home() {
 
   function signOut() {
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.removeItem(IDLE_ACTIVITY_KEY);
     setView('account'); setSelected(lang); setAuthMode('signin'); setShowPassword(false); setName(''); setEmail(''); setIdToken('');
     setAnswers(Array(5).fill(-1)); setAttempts(0); setPassed(false); setCertificates([]); setCertificate(null); setError(''); setAuthNotice(''); setServiceWarning('');
     setCompletedCourseIds([]); setActiveCourseId('WAH-001'); setProjectRegion(''); setCity(''); setCustomCity('');
@@ -561,8 +606,7 @@ export default function Home() {
               <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[#596b61]"><span>{t.cards}</span><span>{t.questions}</span><span>{t.pass}</span></div>
               {locked && <div className="mt-5 rounded-xl bg-[#fff3dd] p-4 text-sm font-semibold text-[#7a5011]">{t.lock}<br/>{lockoutUntil}</div>}
               {!activeCourse.contentReady && <p className="mt-5 rounded-xl bg-[#eef4f0] p-4 text-sm font-semibold text-[#52665a]">This OSHA module is listed in the sequence and its reviewed lesson is being prepared.</p>}
-              {!activeLanguageReady && <p className="mt-5 rounded-xl bg-[#fff3dd] p-4 text-sm font-semibold text-[#7a5011]">This new module is currently available in English. Select English to take it; verified safety translations are not released until reviewed.</p>}
-              <button type="button" disabled={locked || !activeCourse.contentReady || !activeLanguageReady} onClick={() => { setSlide(0); setAnswers(Array(data.quiz.length).fill(-1)); setView('lesson'); }} className="primary-button mt-6 sm:w-auto sm:px-8">{completedCourseIds.includes(activeCourse.id) ? 'Review course' : attempts ? t.resume : t.start}</button>
+              <button type="button" disabled={locked || !activeCourse.contentReady} onClick={() => { setSlide(0); setAnswers(Array(data.quiz.length).fill(-1)); setView('lesson'); }} className="primary-button mt-6 sm:w-auto sm:px-8">{completedCourseIds.includes(activeCourse.id) ? 'Review course' : attempts ? t.resume : t.start}</button>
             </div>
           </article>
           <h2 className="mt-10 text-lg font-black">Construction safety course sequence</h2>
@@ -571,12 +615,11 @@ export default function Home() {
             {courseCatalog.map((item, index) => {
               const completed = completedCourseIds.includes(item.id);
               const unlocked = completed || index === firstIncompleteIndex;
-              const languageReady = index < 17 || lang === 'en';
-              const selectable = unlocked && item.contentReady && languageReady;
+              const selectable = unlocked && item.contentReady;
               return <button key={item.id} type="button" disabled={!selectable} onClick={() => selectCourse(item.id)} className={`catalog-card ${activeCourse.id === item.id ? 'active' : ''}`}>
-                <span className={`catalog-status ${completed ? 'complete' : unlocked ? 'current' : ''}`}>{completed ? '✓ Completed' : unlocked ? (!languageReady ? 'English version available' : item.contentReady ? 'Available now' : 'Content in preparation') : '🔒 Locked'}</span>
+                <span className={`catalog-status ${completed ? 'complete' : unlocked ? 'current' : ''}`}>{completed ? '✓ Completed' : unlocked ? (item.contentReady ? 'Available now' : 'Content in preparation') : '🔒 Locked'}</span>
                 <span className="mt-3 block text-xs font-bold text-[#718078]">{String(index + 1).padStart(2, '0')} · {item.standard}</span>
-                <strong className="mt-2 block text-base">{item.titles[lang]}</strong>
+                <strong className="mt-2 block text-base">{lang === 'bn' ? banglaCourses[item.id].title : item.titles[baseLang]}</strong>
               </button>;
             })}
           </div>
