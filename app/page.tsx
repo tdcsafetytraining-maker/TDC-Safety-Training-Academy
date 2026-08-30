@@ -565,6 +565,10 @@ export default function Home() {
 
       {view === 'account' && (
         <section className="narrow">
+          <div className="mb-6 text-center">
+            <p className="eyebrow">TDC Internal HSE Learning Portal</p>
+            <h1 className="mt-2 text-2xl font-black tracking-tight text-[#102219] sm:text-3xl">Improving TDC Health &amp; Safety Culture</h1>
+          </div>
           <button type="button" onClick={() => setView('language')} className="back-link">← {copy[lang].choose}</button>
           <div className="panel mt-4">
             <p className="step">{accountText.entryStep}</p><h1 className="panel-title">{t.account}</h1><p className="panel-copy">{t.accountHelp}</p>
