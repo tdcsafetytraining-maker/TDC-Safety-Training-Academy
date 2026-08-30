@@ -6,7 +6,7 @@ const SETTINGS = {
   maxAttempts: 3,
   lockoutHours: 24,
   timeZone: 'Asia/Riyadh',
-  courseOrder: ['WAH-001', 'CSP-002', 'SCA-003', 'FOP-004', 'HEM-005', 'MMI-006', 'RIG-007', 'SIG-008', 'FIR-009', 'HSK-010', 'EXC-011', 'ELC-012', 'LOTO-013', 'PPE-014', 'HPT-015', 'HAZ-016', 'EMR-017'],
+  courseOrder: ['WAH-001', 'CSP-002', 'SCA-003', 'FOP-004', 'HEM-005', 'MMI-006', 'RIG-007', 'SIG-008', 'FIR-009', 'HSK-010', 'EXC-011', 'ELC-012', 'LOTO-013', 'PPE-014', 'HPT-015', 'HAZ-016', 'EMR-017', 'STM-018', 'PTW-019', 'BAR-020', 'FLO-021', 'TBT-022', 'MHL-023'],
 };
 
 const ENGLISH_COURSE_TITLES = {
@@ -27,6 +27,12 @@ const ENGLISH_COURSE_TITLES = {
   'HPT-015': 'Hand & Power Tool Safety',
   'HAZ-016': 'Hazard Communication',
   'EMR-017': 'Emergency Response',
+  'STM-018': 'Safe Material Storage',
+  'PTW-019': 'Permit to Work',
+  'BAR-020': 'Barriers, Signs & Barricades',
+  'FLO-021': 'Floor & Hole Openings',
+  'TBT-022': 'Toolbox Talks',
+  'MHL-023': 'Manual Handling',
 };
 
 function doGet() {
@@ -69,17 +75,20 @@ function verifyFirebaseToken_(idToken) {
 
 function registerLearner_(identity, request) {
   const sheet = sheet_('Learners');
+  ensureLearnerLocationColumns_(sheet);
   const rows = values_(sheet);
   const now = new Date();
   const index = rows.findIndex(function (row, i) { return i > 0 && row[1] === identity.uid; });
   const fullName = clean_(request.fullName || identity.displayName || 'Learner', 120);
   const language = allowedLanguage_(request.language);
+  const projectRegion = clean_(request.projectRegion, 80);
+  const city = clean_(request.city, 100);
   if (index >= 1) {
-    sheet.getRange(index + 1, 3, 1, 6).setValues([[fullName, identity.email, language, 'Active', rows[index][6] || now, now]]);
+    sheet.getRange(index + 1, 3, 1, 8).setValues([[fullName, identity.email, language, 'Active', rows[index][6] || now, now, projectRegion || rows[index][8] || '', city || rows[index][9] || '']]);
     return { learnerId: rows[index][0] };
   }
   const learnerId = 'LRN-' + Utilities.getUuid().slice(0, 8).toUpperCase();
-  sheet.appendRow([learnerId, identity.uid, fullName, identity.email, language, 'Active', now, now]);
+  sheet.appendRow([learnerId, identity.uid, fullName, identity.email, language, 'Active', now, now, projectRegion, city]);
   audit_(identity, 'LEARNER_REGISTERED', '', learnerId, 'Success', language);
   return { learnerId: learnerId };
 }
@@ -208,6 +217,11 @@ function completeCourse_(identity, result) {
   }
 }
 
+function ensureLearnerLocationColumns_(sheet) {
+  if (sheet.getRange(1, 9).getValue() !== 'Project Region') sheet.getRange(1, 9).setValue('Project Region');
+  if (sheet.getRange(1, 10).getValue() !== 'City') sheet.getRange(1, 10).setValue('City');
+}
+
 function certificateCourseTitle_(courseId, translatedTitle, language) {
   const englishTitle = ENGLISH_COURSE_TITLES[courseId];
   if (!englishTitle) throw new Error('Missing English certificate title for course ' + courseId + '.');
@@ -287,6 +301,12 @@ function gradeAnswers_(courseId, answers) {
     'HPT-015': [2, 1, 3, 0, 2],
     'HAZ-016': [1, 2, 0, 3, 1],
     'EMR-017': [2, 0, 3, 1, 2],
+    'STM-018': [1, 2, 3, 0, 1],
+    'PTW-019': [2, 1, 0, 2, 1],
+    'BAR-020': [0, 2, 1, 1, 1],
+    'FLO-021': [1, 2, 0, 2, 1],
+    'TBT-022': [2, 0, 1, 1, 2],
+    'MHL-023': [3, 1, 1, 0, 2],
   };
   const key = keys[courseId];
   if (!key) throw new Error('No approved answer key exists for this course.');
