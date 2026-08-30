@@ -34,6 +34,7 @@ const modules = {
   a: loadTypeScript('lib/final-courses-a.ts'),
   b: loadTypeScript('lib/final-courses-b.ts'),
   c: loadTypeScript('lib/final-courses-c.ts'),
+  extra: loadTypeScript('lib/additional-courses.ts'),
 };
 
 const pageSource = fs.readFileSync(path.join(root, 'app/page.tsx'), 'utf8');
@@ -61,6 +62,12 @@ const courses = {
   'HPT-015': modules.c.toolsCourse,
   'HAZ-016': modules.c.hazcomCourse,
   'EMR-017': modules.c.emergencyCourse,
+  'STM-018': modules.extra.materialStorageCourse,
+  'PTW-019': modules.extra.permitToWorkCourse,
+  'BAR-020': modules.extra.barriersSignsCourse,
+  'FLO-021': modules.extra.floorOpeningCourse,
+  'TBT-022': modules.extra.toolboxTalkCourse,
+  'MHL-023': modules.extra.manualHandlingCourse,
 };
 
 const backendSource = fs.readFileSync(path.join(root, 'apps-script/Code.gs'), 'utf8');
