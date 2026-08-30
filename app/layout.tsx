@@ -5,17 +5,17 @@ const siteUrl = 'https://tdcsafetytraining-maker.github.io/TDC-Safety-Training-A
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: 'TDC HSE Training Academy',
-  description: 'Mobile OSHA safety training for TDC Contracting.',
+  title: 'Improving TDC Health & Safety Culture',
+  description: 'TDC internal mobile health and safety awareness training.',
   icons: { icon: `${siteUrl}/favicon.svg` },
   openGraph: {
-    title: 'TDC Safety Academy',
-    description: 'Mobile OSHA 1910 and 1926 safety training for TDC Contracting.',
+    title: 'Improving TDC Health & Safety Culture',
+    description: 'TDC internal mobile health and safety awareness training.',
   },
   twitter: {
     card: 'summary',
-    title: 'TDC Safety Academy',
-    description: 'Mobile OSHA 1910 and 1926 safety training for TDC Contracting.',
+    title: 'Improving TDC Health & Safety Culture',
+    description: 'TDC internal mobile health and safety awareness training.',
   },
 };
 
