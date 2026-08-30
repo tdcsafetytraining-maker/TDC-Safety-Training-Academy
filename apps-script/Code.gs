@@ -98,7 +98,8 @@ function submitAttempt_(identity, request) {
   lock.waitLock(30000);
   try {
     const courseId = clean_(request.courseId, 50);
-    const courseTitle = clean_(request.courseTitle, 160);
+    const localizedCourseTitle = clean_(request.courseTitle, 160);
+    const courseTitle = englishCourseTitle_(courseId);
     const learnerName = clean_(request.learnerName || identity.displayName || 'Learner', 120);
     const language = allowedLanguage_(request.language);
     verifyCourseUnlocked_(identity.uid, courseId);
@@ -106,7 +107,7 @@ function submitAttempt_(identity, request) {
     const score = grading.scorePercent;
     const correctAnswers = grading.correctAnswers;
     const totalQuestions = grading.totalQuestions;
-    if (!courseId || !courseTitle) throw new Error('Course information is incomplete.');
+    if (!courseId || !localizedCourseTitle) throw new Error('Course information is incomplete.');
 
     const now = new Date();
     const previous = courseAttempts_(identity.uid, courseId);
@@ -132,6 +133,7 @@ function submitAttempt_(identity, request) {
       learnerName: learnerName,
       courseId: courseId,
       courseTitle: courseTitle,
+      localizedCourseTitle: localizedCourseTitle,
       language: language,
       score: score,
       completedAt: now,
@@ -174,7 +176,7 @@ function completeCourse_(identity, result) {
 
   try {
     const presentation = SlidesApp.openById(workingCopy.getId());
-    const certificateCourseTitle = certificateCourseTitle_(result.courseId, result.courseTitle, result.language);
+    const certificateCourseTitle = certificateCourseTitle_(result.courseId, result.localizedCourseTitle, result.language);
     const replacements = {
       '{{TRAINEE_NAME}}': result.learnerName,
       '{{ID_NUMBER}}': '',
@@ -223,12 +225,17 @@ function ensureLearnerLocationColumns_(sheet) {
 }
 
 function certificateCourseTitle_(courseId, translatedTitle, language) {
-  const englishTitle = ENGLISH_COURSE_TITLES[courseId];
-  if (!englishTitle) throw new Error('Missing English certificate title for course ' + courseId + '.');
+  const englishTitle = englishCourseTitle_(courseId);
   const localized = clean_(translatedTitle, 160);
   return language !== 'en' && localized && localized !== englishTitle
     ? englishTitle + '\n' + localized
     : englishTitle;
+}
+
+function englishCourseTitle_(courseId) {
+  const englishTitle = ENGLISH_COURSE_TITLES[courseId];
+  if (!englishTitle) throw new Error('Missing English course title for course ' + courseId + '.');
+  return englishTitle;
 }
 
 function getProfile_(identity) {
