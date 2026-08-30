@@ -35,6 +35,7 @@ const modules = {
   b: loadTypeScript('lib/final-courses-b.ts'),
   c: loadTypeScript('lib/final-courses-c.ts'),
   extra: loadTypeScript('lib/additional-courses.ts'),
+  bangla: loadTypeScript('lib/bangla-courses.generated.ts'),
 };
 
 const pageSource = fs.readFileSync(path.join(root, 'app/page.tsx'), 'utf8');
@@ -93,6 +94,14 @@ for (const [courseId, localized] of Object.entries(courses)) {
       if (question.a.some(Boolean) && new Set(question.a.map(normalize)).size !== question.a.length) throw new Error(`${courseId} ${language} question ${index + 1} contains duplicate answer choices.`);
     });
   }
+  const bangla = modules.bangla.banglaCourses[courseId];
+  if (!bangla || !bangla.title || bangla.slides.length !== 8 || bangla.quiz.length !== 5) throw new Error(`${courseId} has incomplete Bangla training content.`);
+  if (bangla.quiz.map((question) => question.correct).join() !== englishKey.join()) throw new Error(`${courseId} Bangla answer key differs from English.`);
+  const banglaText = JSON.stringify(bangla);
+  if (/TDC_(?:TERM|SPLIT)/.test(banglaText)) throw new Error(`${courseId} Bangla content contains an unresolved protected token.`);
+  bangla.quiz.forEach((question, index) => {
+    if (!question.q.trim() || question.a.length !== 4 || question.a.some((answer) => !answer.trim())) throw new Error(`${courseId} Bangla question ${index + 1} is incomplete.`);
+  });
   localized.en.quiz.forEach((question, index) => {
     if (!question.q) return;
     const normalizedQuestion = normalize(question.q);
@@ -114,5 +123,5 @@ for (const [courseId, localized] of Object.entries(courses)) {
   }
 }
 
-console.log(`Answer-key consistency passed for ${Object.keys(courses).length} courses and ${Object.keys(courses).length * 5} questions.`);
+console.log(`Answer-key consistency passed for ${Object.keys(courses).length} courses, including all Bangla lessons and ${Object.keys(courses).length * 5} Bangla questions.`);
 
