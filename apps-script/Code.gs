@@ -329,7 +329,7 @@ function sheet_(name) {
 
 function values_(sheet) { return sheet.getDataRange().getValues(); }
 function clean_(value, max) { return String(value || '').replace(/[<>]/g, '').trim().slice(0, max); }
-function allowedLanguage_(value) { return ['en', 'ar', 'ur', 'hi'].indexOf(value) >= 0 ? value : 'en'; }
+function allowedLanguage_(value) { return ['en', 'ar', 'ur', 'hi', 'bn'].indexOf(value) >= 0 ? value : 'en'; }
 function pad_(value, length) { return String(value).padStart(length, '0'); }
 function iso_(date) { return Utilities.formatDate(date, SETTINGS.timeZone, "yyyy-MM-dd'T'HH:mm:ssXXX"); }
 function displayDate_(date) { return Utilities.formatDate(new Date(date), SETTINGS.timeZone, 'dd-MM-yyyy'); }
