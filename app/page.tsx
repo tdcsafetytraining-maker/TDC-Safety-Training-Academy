@@ -15,6 +15,7 @@ import { ppeCourse, toolsCourse, hazcomCourse, emergencyCourse } from '../lib/fi
 import { saudiProjectLocations, saudiProjectRegions, type SaudiProjectRegion } from '../lib/saudi-locations';
 import { materialStorageCourse, permitToWorkCourse, barriersSignsCourse, floorOpeningCourse, toolboxTalkCourse, manualHandlingCourse } from '../lib/additional-courses';
 import { banglaCourses } from '../lib/bangla-courses.generated';
+import { incidentInvestigationCourse } from '../lib/incident-investigation-course';
 
 type Lang = CourseLanguage | 'bn';
 type View = 'language' | 'account' | 'dashboard' | 'lesson' | 'quiz' | 'result' | 'profile';
@@ -59,6 +60,7 @@ const visualRules = [
   { words: ['lockout', 'energy', 'عزل', 'قفل', 'توانائی', 'ऊर्जा', 'লকআউট', 'শক্তি'], icon: '🔒', tone: 'red' },
   { words: ['chemical', 'hazard communication', 'sds', 'كيميائ', 'کیمیائی', 'रसायन', 'রাসায়নিক'], icon: '🧪', tone: 'purple' },
   { words: ['tool', 'equipment', 'machine', 'أداة', 'معدات', 'مشین', 'उपकरण', 'সরঞ্জাম', 'মেশিন'], icon: '🛠️', tone: 'teal' },
+  { words: ['incident', 'investigat', 'evidence', 'حادث', 'تحقيق', 'واقع', 'تحقیقات', 'घटना', 'जाँच', 'ঘটনা', 'তদন্ত'], icon: '🔎', tone: 'blue' },
 ];
 
 function presentSlide(title: string, text: string) {
@@ -216,9 +218,10 @@ export default function Home() {
     'PPE-014': ppeCourse[baseLang], 'HPT-015': toolsCourse[baseLang], 'HAZ-016': hazcomCourse[baseLang], 'EMR-017': emergencyCourse[baseLang],
     'STM-018': materialStorageCourse[baseLang], 'PTW-019': permitToWorkCourse[baseLang], 'BAR-020': barriersSignsCourse[baseLang],
     'FLO-021': floorOpeningCourse[baseLang], 'TBT-022': toolboxTalkCourse[baseLang], 'MHL-023': manualHandlingCourse[baseLang],
+    'INC-024': incidentInvestigationCourse[baseLang],
   };
-  const data = lang === 'bn' ? banglaCourses[activeCourseId] : lessons[activeCourseId] || course[baseLang];
-  const courseTitle = lang === 'bn' ? banglaCourses[activeCourse.id].title : activeCourse.titles[baseLang];
+  const data = lang === 'bn' ? (activeCourseId === 'INC-024' ? incidentInvestigationCourse.bn : banglaCourses[activeCourseId]) : lessons[activeCourseId] || course[baseLang];
+  const courseTitle = lang === 'bn' ? (activeCourse.id === 'INC-024' ? 'ঘটনা তদন্ত' : banglaCourses[activeCourse.id].title) : activeCourse.titles[baseLang];
   const t = { ...copy[lang], lesson: courseTitle };
   const accountText = accountUi[lang];
   const rtl = languages.find((item) => item.code === lang)?.rtl;
@@ -623,7 +626,7 @@ export default function Home() {
               return <button key={item.id} type="button" disabled={!selectable} onClick={() => selectCourse(item.id)} className={`catalog-card ${activeCourse.id === item.id ? 'active' : ''}`}>
                 <span className={`catalog-status ${completed ? 'complete' : unlocked ? 'current' : ''}`}>{completed ? '✓ Completed' : unlocked ? (item.contentReady ? 'Available now' : 'Content in preparation') : '🔒 Locked'}</span>
                 <span className="mt-3 block text-xs font-bold text-[#718078]">{String(index + 1).padStart(2, '0')} · {item.standard}</span>
-                <strong className="mt-2 block text-base">{lang === 'bn' ? banglaCourses[item.id].title : item.titles[baseLang]}</strong>
+                <strong className="mt-2 block text-base">{lang === 'bn' ? (item.id === 'INC-024' ? 'ঘটনা তদন্ত' : banglaCourses[item.id].title) : item.titles[baseLang]}</strong>
               </button>;
             })}
           </div>
@@ -700,4 +703,3 @@ export default function Home() {
     </main>
   );
 }
-

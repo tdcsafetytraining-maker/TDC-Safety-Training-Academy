@@ -36,6 +36,7 @@ const modules = {
   c: loadTypeScript('lib/final-courses-c.ts'),
   extra: loadTypeScript('lib/additional-courses.ts'),
   bangla: loadTypeScript('lib/bangla-courses.generated.ts'),
+  incident: loadTypeScript('lib/incident-investigation-course.ts'),
 };
 
 const pageSource = fs.readFileSync(path.join(root, 'app/page.tsx'), 'utf8');
@@ -69,6 +70,7 @@ const courses = {
   'FLO-021': modules.extra.floorOpeningCourse,
   'TBT-022': modules.extra.toolboxTalkCourse,
   'MHL-023': modules.extra.manualHandlingCourse,
+  'INC-024': modules.incident.incidentInvestigationCourse,
 };
 
 const backendSource = fs.readFileSync(path.join(root, 'apps-script/Code.gs'), 'utf8');
@@ -94,7 +96,7 @@ for (const [courseId, localized] of Object.entries(courses)) {
       if (question.a.some(Boolean) && new Set(question.a.map(normalize)).size !== question.a.length) throw new Error(`${courseId} ${language} question ${index + 1} contains duplicate answer choices.`);
     });
   }
-  const bangla = modules.bangla.banglaCourses[courseId];
+  const bangla = courseId === 'INC-024' ? { title: 'ঘটনা তদন্ত', ...modules.incident.incidentInvestigationCourse.bn } : modules.bangla.banglaCourses[courseId];
   if (!bangla || !bangla.title || bangla.slides.length !== 8 || bangla.quiz.length !== 5) throw new Error(`${courseId} has incomplete Bangla training content.`);
   if (bangla.quiz.map((question) => question.correct).join() !== englishKey.join()) throw new Error(`${courseId} Bangla answer key differs from English.`);
   const banglaText = JSON.stringify(bangla);
@@ -124,4 +126,3 @@ for (const [courseId, localized] of Object.entries(courses)) {
 }
 
 console.log(`Answer-key consistency passed for ${Object.keys(courses).length} courses, including all Bangla lessons and ${Object.keys(courses).length * 5} Bangla questions.`);
-

@@ -6,7 +6,7 @@ const SETTINGS = {
   maxAttempts: 3,
   lockoutHours: 24,
   timeZone: 'Asia/Riyadh',
-  courseOrder: ['WAH-001', 'CSP-002', 'SCA-003', 'FOP-004', 'HEM-005', 'MMI-006', 'RIG-007', 'SIG-008', 'FIR-009', 'HSK-010', 'EXC-011', 'ELC-012', 'LOTO-013', 'PPE-014', 'HPT-015', 'HAZ-016', 'EMR-017', 'STM-018', 'PTW-019', 'BAR-020', 'FLO-021', 'TBT-022', 'MHL-023'],
+  courseOrder: ['WAH-001', 'CSP-002', 'SCA-003', 'FOP-004', 'HEM-005', 'MMI-006', 'RIG-007', 'SIG-008', 'FIR-009', 'HSK-010', 'EXC-011', 'ELC-012', 'LOTO-013', 'PPE-014', 'HPT-015', 'HAZ-016', 'EMR-017', 'STM-018', 'PTW-019', 'BAR-020', 'FLO-021', 'TBT-022', 'MHL-023', 'INC-024'],
 };
 
 const ENGLISH_COURSE_TITLES = {
@@ -33,6 +33,7 @@ const ENGLISH_COURSE_TITLES = {
   'FLO-021': 'Floor & Hole Openings',
   'TBT-022': 'Toolbox Talks',
   'MHL-023': 'Manual Handling',
+  'INC-024': 'Incident Investigation',
 };
 
 function doGet() {
@@ -314,6 +315,7 @@ function gradeAnswers_(courseId, answers) {
     'FLO-021': [1, 2, 0, 2, 1],
     'TBT-022': [2, 0, 1, 1, 2],
     'MHL-023': [3, 1, 1, 0, 2],
+    'INC-024': [1, 2, 0, 3, 1],
   };
   const key = keys[courseId];
   if (!key) throw new Error('No approved answer key exists for this course.');
@@ -347,4 +349,3 @@ function bridge_(channel, payload) {
   return HtmlService.createHtmlOutput('<!doctype html><meta charset="utf-8"><script>parent.postMessage({channel:' + safeChannel + ',payload:' + safePayload + '},"*");<\/script>')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
-
