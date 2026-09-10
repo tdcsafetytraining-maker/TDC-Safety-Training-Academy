@@ -38,7 +38,7 @@ export const courseCatalog: CourseCatalogItem[] = [
   { id: 'FLO-021', standard: '29 CFR 1926 Subpart M', shortLabel: 'FLOOR OPENINGS', titles: { en: 'Floor & Hole Openings', ar: 'فتحات الأرضيات والحفر', ur: 'فرش اور سوراخ کے openings', hi: 'फर्श और छेद के उद्घाटन' }, references: '29 CFR 1926.500–1926.502', contentReady: true },
   { id: 'TBT-022', standard: '29 CFR 1926.21(b)(2)', shortLabel: 'TOOLBOX TALKS', titles: { en: 'Toolbox Talks', ar: 'اجتماعات التوعية اليومية', ur: 'ٹول باکس ٹاکس', hi: 'टूलबॉक्स वार्ता' }, references: '29 CFR 1926.20; 1926.21(b)(2)', contentReady: true },
   { id: 'MHL-023', standard: '29 CFR 1926.250', shortLabel: 'MANUAL HANDLING', titles: { en: 'Manual Handling', ar: 'المناولة اليدوية', ur: 'دستی سامان اٹھانا', hi: 'हाथ से सामग्री संभालना' }, references: '29 CFR 1926.21(b)(2); 1926.250; OSHA ergonomics guidance', contentReady: true },
-  { id: 'INC-024', standard: '29 CFR 1904; OSHA Recommended Practices', shortLabel: 'INCIDENT INVESTIGATION', titles: { en: 'Incident Investigation', ar: 'التحقيق في الحوادث', ur: 'واقعے کی تحقیقات', hi: 'घटना जाँच' }, references: '29 CFR 1904.35; 1904.39; OSHA Incident Investigation guidance', contentReady: true },
+  { id: 'INC-024', standard: 'TDC / Project Incident Reporting; Saudi Requirements', shortLabel: 'INCIDENT INVESTIGATION', titles: { en: 'Incident Investigation', ar: 'التحقيق في الحوادث', ur: 'واقعے کی تحقیقات', hi: 'घटना जाँच' }, references: 'TDC, client and project procedures; applicable Saudi requirements; incident-investigation good practice', contentReady: true },
 ];
 
 export const confinedSpaceCourse: Record<CourseLanguage, CourseLesson> = {
