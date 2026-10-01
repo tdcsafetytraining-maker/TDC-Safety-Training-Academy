@@ -39,6 +39,7 @@ export const courseCatalog: CourseCatalogItem[] = [
   { id: 'TBT-022', standard: '29 CFR 1926.21(b)(2)', shortLabel: 'TOOLBOX TALKS', titles: { en: 'Toolbox Talks', ar: 'اجتماعات التوعية اليومية', ur: 'ٹول باکس ٹاکس', hi: 'टूलबॉक्स वार्ता' }, references: '29 CFR 1926.20; 1926.21(b)(2)', contentReady: true },
   { id: 'MHL-023', standard: '29 CFR 1926.250', shortLabel: 'MANUAL HANDLING', titles: { en: 'Manual Handling', ar: 'المناولة اليدوية', ur: 'دستی سامان اٹھانا', hi: 'हाथ से सामग्री संभालना' }, references: '29 CFR 1926.21(b)(2); 1926.250; OSHA ergonomics guidance', contentReady: true },
   { id: 'INC-024', standard: 'TDC / Project Incident Reporting; Saudi Requirements', shortLabel: 'INCIDENT INVESTIGATION', titles: { en: 'Incident Investigation', ar: 'التحقيق في الحوادث', ur: 'واقعے کی تحقیقات', hi: 'घटना जाँच' }, references: 'TDC, client and project procedures; applicable Saudi requirements; incident-investigation good practice', contentReady: true },
+  { id: 'HRC-025', standard: 'ISO 45001:2018 · TDC Risk Management', shortLabel: 'HAZARD ID / RISK / CONTROLS', titles: { en: 'Hazard Identification, Risk Assessment and Controls', ar: 'تحديد الأخطار وتقييم المخاطر والضوابط', ur: 'خطرات کی شناخت، رسک اسیسمنٹ اور کنٹرولز', hi: 'खतरे की पहचान, जोखिम मूल्यांकन और नियंत्रण' }, references: 'ISO 45001:2018 clauses 6.1.2 and 8.1.2; TDC, client and project risk-management procedures; applicable Saudi requirements', contentReady: true },
 ];
 
 export const confinedSpaceCourse: Record<CourseLanguage, CourseLesson> = {
