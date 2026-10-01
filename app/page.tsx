@@ -16,6 +16,7 @@ import { saudiProjectLocations, saudiProjectRegions, type SaudiProjectRegion } f
 import { materialStorageCourse, permitToWorkCourse, barriersSignsCourse, floorOpeningCourse, toolboxTalkCourse, manualHandlingCourse } from '../lib/additional-courses';
 import { banglaCourses } from '../lib/bangla-courses.generated';
 import { incidentInvestigationCourse } from '../lib/incident-investigation-course';
+import { hiracCourse } from '../lib/hirac-course';
 
 type Lang = CourseLanguage | 'bn';
 type View = 'language' | 'account' | 'dashboard' | 'lesson' | 'quiz' | 'result' | 'profile';
@@ -42,12 +43,12 @@ const languages: { code: Lang; name: string; local: string; rtl: boolean }[] = [
   { code: 'bn', name: 'Bangla', local: 'বাংলা', rtl: false },
 ];
 
-const lessonUi: Record<Lang, { focus: string; points: string; figures: string; reveal: string; takeaway: string; listen: string; stop: string; previous: string; slide: string }> = {
-  en: { focus: 'Safety focus', points: 'What you need to know', figures: 'Key figures', reveal: 'Tap to reveal the key takeaway', takeaway: 'Remember this', listen: 'Listen', stop: 'Stop audio', previous: 'Previous', slide: 'Slide' },
-  ar: { focus: 'محور السلامة', points: 'ما يجب أن تعرفه', figures: 'الأرقام المهمة', reveal: 'اضغط لإظهار الخلاصة المهمة', takeaway: 'تذكر هذا', listen: 'استمع', stop: 'إيقاف الصوت', previous: 'السابق', slide: 'الشريحة' },
-  ur: { focus: 'حفاظتی توجہ', points: 'آپ کو کیا جاننا ہے', figures: 'اہم اعداد', reveal: 'اہم خلاصہ دیکھنے کے لیے دبائیں', takeaway: 'یہ یاد رکھیں', listen: 'سنیں', stop: 'آواز بند کریں', previous: 'پچھلی', slide: 'سلائیڈ' },
-  hi: { focus: 'सुरक्षा विषय', points: 'आपको क्या जानना है', figures: 'मुख्य आँकड़े', reveal: 'मुख्य बात देखने के लिए टैप करें', takeaway: 'इसे याद रखें', listen: 'सुनें', stop: 'ऑडियो रोकें', previous: 'पिछला', slide: 'स्लाइड' },
-  bn: { focus: 'নিরাপত্তার বিষয়', points: 'যা আপনার জানা দরকার', figures: 'গুরুত্বপূর্ণ পরিমাপ', reveal: 'মূল বিষয়টি দেখতে ট্যাপ করুন', takeaway: 'এটি মনে রাখুন', listen: 'শুনুন', stop: 'অডিও বন্ধ করুন', previous: 'পূর্ববর্তী', slide: 'স্লাইড' },
+const lessonUi: Record<Lang, { focus: string; points: string; figures: string; reveal: string; takeaway: string; previous: string; slide: string }> = {
+  en: { focus: 'Safety focus', points: 'What you need to know', figures: 'Key figures', reveal: 'Tap to reveal the key takeaway', takeaway: 'Remember this', previous: 'Previous', slide: 'Slide' },
+  ar: { focus: 'محور السلامة', points: 'ما يجب أن تعرفه', figures: 'الأرقام المهمة', reveal: 'اضغط لإظهار الخلاصة المهمة', takeaway: 'تذكر هذا', previous: 'السابق', slide: 'الشريحة' },
+  ur: { focus: 'حفاظتی توجہ', points: 'آپ کو کیا جاننا ہے', figures: 'اہم اعداد', reveal: 'اہم خلاصہ دیکھنے کے لیے دبائیں', takeaway: 'یہ یاد رکھیں', previous: 'پچھلی', slide: 'سلائیڈ' },
+  hi: { focus: 'सुरक्षा विषय', points: 'आपको क्या जानना है', figures: 'मुख्य आँकड़े', reveal: 'मुख्य बात देखने के लिए टैप करें', takeaway: 'इसे याद रखें', previous: 'पिछला', slide: 'स्लाइड' },
+  bn: { focus: 'নিরাপত্তার বিষয়', points: 'যা আপনার জানা দরকার', figures: 'গুরুত্বপূর্ণ পরিমাপ', reveal: 'মূল বিষয়টি দেখতে ট্যাপ করুন', takeaway: 'এটি মনে রাখুন', previous: 'পূর্ববর্তী', slide: 'স্লাইড' },
 };
 
 const visualRules = [
@@ -202,7 +203,6 @@ export default function Home() {
   const [passwordMessage, setPasswordMessage] = useState('');
   const [serviceWarning, setServiceWarning] = useState('');
   const [takeawayRevealed, setTakeawayRevealed] = useState(false);
-  const [speaking, setSpeaking] = useState(false);
   const [activeCourseId, setActiveCourseId] = useState('WAH-001');
   const [completedCourseIds, setCompletedCourseIds] = useState<string[]>([]);
   const [projectRegion, setProjectRegion] = useState<SaudiProjectRegion | ''>('');
@@ -219,9 +219,14 @@ export default function Home() {
     'STM-018': materialStorageCourse[baseLang], 'PTW-019': permitToWorkCourse[baseLang], 'BAR-020': barriersSignsCourse[baseLang],
     'FLO-021': floorOpeningCourse[baseLang], 'TBT-022': toolboxTalkCourse[baseLang], 'MHL-023': manualHandlingCourse[baseLang],
     'INC-024': incidentInvestigationCourse[baseLang],
+    'HRC-025': hiracCourse[baseLang],
   };
-  const data = lang === 'bn' ? (activeCourseId === 'INC-024' ? incidentInvestigationCourse.bn : banglaCourses[activeCourseId]) : lessons[activeCourseId] || course[baseLang];
-  const courseTitle = lang === 'bn' ? (activeCourse.id === 'INC-024' ? 'ঘটনা তদন্ত' : banglaCourses[activeCourse.id].title) : activeCourse.titles[baseLang];
+  const customBanglaCourses: Record<string, CourseLesson & { title: string }> = {
+    'INC-024': { title: 'ঘটনা তদন্ত', ...incidentInvestigationCourse.bn },
+    'HRC-025': { title: 'বিপদ শনাক্তকরণ, ঝুঁকি মূল্যায়ন ও নিয়ন্ত্রণ', ...hiracCourse.bn },
+  };
+  const data = lang === 'bn' ? (customBanglaCourses[activeCourseId] || banglaCourses[activeCourseId]) : lessons[activeCourseId] || course[baseLang];
+  const courseTitle = lang === 'bn' ? (customBanglaCourses[activeCourse.id] || banglaCourses[activeCourse.id]).title : activeCourse.titles[baseLang];
   const t = { ...copy[lang], lesson: courseTitle };
   const accountText = accountUi[lang];
   const rtl = languages.find((item) => item.code === lang)?.rtl;
@@ -235,26 +240,7 @@ export default function Home() {
 
   useEffect(() => {
     setTakeawayRevealed(false);
-    setSpeaking(false);
-    window.speechSynthesis?.cancel();
   }, [slide, activeCourseId, lang, view]);
-
-  function toggleNarration() {
-    if (!('speechSynthesis' in window)) return;
-    if (speaking) {
-      window.speechSynthesis.cancel();
-      setSpeaking(false);
-      return;
-    }
-    const utterance = new SpeechSynthesisUtterance(`${currentSlide.title}. ${currentSlide.text}`);
-    utterance.lang = { en: 'en-US', ar: 'ar-SA', ur: 'ur-PK', hi: 'hi-IN', bn: 'bn-BD' }[lang];
-    utterance.rate = 0.92;
-    utterance.onend = () => setSpeaking(false);
-    utterance.onerror = () => setSpeaking(false);
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
-    setSpeaking(true);
-  }
 
   function selectCourse(courseId: string) {
     setActiveCourseId(courseId);
@@ -626,7 +612,7 @@ export default function Home() {
               return <button key={item.id} type="button" disabled={!selectable} onClick={() => selectCourse(item.id)} className={`catalog-card ${activeCourse.id === item.id ? 'active' : ''}`}>
                 <span className={`catalog-status ${completed ? 'complete' : unlocked ? 'current' : ''}`}>{completed ? '✓ Completed' : unlocked ? (item.contentReady ? 'Available now' : 'Content in preparation') : '🔒 Locked'}</span>
                 <span className="mt-3 block text-xs font-bold text-[#718078]">{String(index + 1).padStart(2, '0')} · {item.standard}</span>
-                <strong className="mt-2 block text-base">{lang === 'bn' ? (item.id === 'INC-024' ? 'ঘটনা তদন্ত' : banglaCourses[item.id].title) : item.titles[baseLang]}</strong>
+                <strong className="mt-2 block text-base">{lang === 'bn' ? (customBanglaCourses[item.id] || banglaCourses[item.id]).title : item.titles[baseLang]}</strong>
               </button>;
             })}
           </div>
@@ -675,7 +661,6 @@ export default function Home() {
             </button>
 
             <div className="lesson-meta">
-              <button type="button" className={`audio-button ${speaking ? 'speaking' : ''}`} onClick={toggleNarration}>{speaking ? '■' : '▶'} {speaking ? lessonText.stop : lessonText.listen}</button>
               <div><span>{t.standard}</span><b>{currentSlide.ref}</b></div>
             </div>
 

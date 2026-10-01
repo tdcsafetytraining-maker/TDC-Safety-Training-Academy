@@ -91,8 +91,6 @@ button:focus-visible { outline: 3px solid rgba(8, 123, 65, 0.3); outline-offset:
 .takeaway-card.revealed .takeaway-chevron { transform: rotate(180deg); }
 @keyframes reveal-takeaway { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 .lesson-meta { display: grid; grid-template-columns: auto 1fr; align-items: stretch; gap: .75rem; margin-top: 1.35rem; }
-.audio-button { min-width: 8.5rem; border: 1px solid #ccddd2; border-radius: 1rem; background: #fff; padding: .8rem 1rem; color: #176c42; font-size: .8rem; font-weight: 900; }
-.audio-button.speaking { border-color: var(--lesson-accent); background: var(--lesson-soft); color: var(--lesson-accent); }
 .lesson-meta > div { border-radius: 1rem; background: #edf7f0; padding: .75rem 1rem; }
 .lesson-meta > div span { display: block; font-size: .64rem; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; color: #16814c; }
 .lesson-meta > div b { display: block; margin-top: .2rem; font-size: .8rem; line-height: 1.35; }
@@ -124,4 +122,3 @@ button:focus-visible { outline: 3px solid rgba(8, 123, 65, 0.3); outline-offset:
   .lesson-actions { grid-template-columns: 1fr; }
   .lesson-actions .secondary-button { order: 2; }
 }
-
